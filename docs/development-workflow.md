@@ -77,10 +77,17 @@ message. Body links the issue with `Closes #12` and completes the template.
 
 ## 6. CI and review
 
-Required checks run: format, lint, typecheck, unit tests on Node 22 and 24,
-build, package validation, package smoke test, integration tests, PR title, and
-dependency review. Reviewers look at correctness, security, public API shape,
-tests, and documentation. Resolve every conversation.
+Eleven checks are required to merge: Format, Lint, Typecheck, Unit tests
+(Node 22), Unit tests (Node 24), Coverage, Package validation, Package smoke
+test, Integration tests, PR title, and Dependency review. Package validation and
+Package smoke test both build the package, so a broken build fails them.
+
+The Label job is intentionally not required. It only applies labels, so blocking
+merges on it would add no signal.
+
+Branches must be up to date with `main` before merging, history stays linear,
+and every conversation must be resolved. Reviewers look at correctness,
+security, public API shape, tests, and documentation.
 
 ## 7. Squash merge
 

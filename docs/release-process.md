@@ -135,14 +135,22 @@ broken release reaches users.
 
 ## Release authentication for the release PR
 
-A pull request created with the default `GITHUB_TOKEN` does not always trigger
-the full set of workflows, which can leave required checks pending forever. This
-repository ships the release workflow using `GITHUB_TOKEN` by default. Before
-enabling blocking rules on the release pull request, the owner must confirm how
-checks are triggered and, if needed, switch to either:
+GitHub does not dispatch workflow events for activity performed with the default
+`GITHUB_TOKEN`, which is how it avoids recursive workflow runs. Every required
+check on `main` is triggered by `pull_request`, so a release pull request opened
+with `GITHUB_TOKEN` starts no checks at all: they stay pending forever and the
+pull request can never be merged. Adding `push` triggers does not help, because
+the release branch is pushed with the same token.
+
+`main` requires those checks, so the release pull request needs a token that
+does trigger workflows. The workflow reads `CHANGESETS_GITHUB_TOKEN` and falls
+back to `GITHUB_TOKEN`, which keeps it runnable while the secret is missing but
+produces a release pull request that cannot merge. Supply one of:
 
 - **Preferred:** a GitHub App token scoped to this repository with only contents and pull-requests read/write.
 - **Acceptable bootstrap:** a fine-grained PAT stored as the `CHANGESETS_GITHUB_TOKEN` secret, restricted to this repository with contents read/write and pull requests read/write.
 
 That token manages the release pull request only. It is never used to publish to
-npm, and it must never appear in a file or a log.
+npm, and it must never appear in a file or a log. Publishing authenticates
+separately through npm trusted publishing over OIDC, so no npm credential is
+stored in this repository.

@@ -56,6 +56,10 @@ jobs:
           title: "chore(release): version cnosdb-client"
           commit: "chore(release): version cnosdb-client"
         env:
-          # Swap for a GitHub App token or CHANGESETS_GITHUB_TOKEN if required
-          # checks must run on the release PR. See docs/release-process.md.
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # GitHub does not dispatch workflow events for activity performed with
+          # GITHUB_TOKEN, so a release PR opened with it starts no checks and can
+          # never satisfy the required checks on main. CHANGESETS_GITHUB_TOKEN is
+          # a fine-grained PAT or GitHub App token that does trigger them. The
+          # fallback keeps this workflow usable before the secret exists, at the
+          # cost of a release PR that cannot merge. See docs/release-process.md.
+          GITHUB_TOKEN: ${{ secrets.CHANGESETS_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
