@@ -13,7 +13,7 @@ import type {
   RequestOptions,
   TimePrecision,
   WriteOptions,
-} from "./types.js";
+} from "./types/index.js";
 
 const DEFAULT_DATABASE = "public";
 const DEFAULT_TENANT = "cnosdb";

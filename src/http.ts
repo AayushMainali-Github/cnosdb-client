@@ -5,7 +5,7 @@ import {
   CnosDBTimeoutError,
   createErrorForStatus,
 } from "./errors.js";
-import type { FetchLike } from "./types.js";
+import type { FetchLike } from "./types/index.js";
 
 /**
  * Maximum number of characters retained from an error response body. Bounding

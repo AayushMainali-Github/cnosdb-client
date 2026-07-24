@@ -17,7 +17,7 @@ import {
   Transport,
   truncate,
 } from "../../src/http.js";
-import type { FetchLike } from "../../src/types.js";
+import type { FetchLike } from "../../src/types/index.js";
 import { captureError, toUrl } from "../helpers.js";
 
 interface Recorded {
