@@ -4,7 +4,7 @@ import {
   CnosDBResponseError,
   CnosDBTimeoutError,
   createErrorForStatus,
-} from "./errors.js";
+} from "./errors/index.js";
 import type { FetchLike } from "./types/index.js";
 
 /**
