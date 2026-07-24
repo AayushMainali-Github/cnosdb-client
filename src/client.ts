@@ -4,7 +4,7 @@ import {
   normalizeBaseUrl,
   Transport,
 } from "./http.js";
-import { serializePoints } from "./line-protocol.js";
+import { serializePoints } from "./line-protocol/index.js";
 import type {
   CnosDBClientOptions,
   Point,

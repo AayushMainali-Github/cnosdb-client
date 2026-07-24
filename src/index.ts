@@ -1,5 +1,5 @@
 export { CnosDBClient } from "./client.js";
-export { serializePoint } from "./line-protocol.js";
+export { serializePoint } from "./line-protocol/index.js";
 export {
   CnosDBAuthenticationError,
   CnosDBError,

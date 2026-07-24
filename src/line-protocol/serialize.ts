@@ -1,101 +1,12 @@
-import type { Point, PointFieldValue, TimePrecision } from "./types/index.js";
-
-/**
- * Multipliers converting milliseconds into the requested precision.
- * `bigint` keeps nanosecond conversions exact.
- */
-const MS_MULTIPLIER: Record<TimePrecision, bigint> = {
-  ms: 1n,
-  us: 1_000n,
-  ns: 1_000_000n,
-};
-
-/**
- * Escapes a measurement name: commas and spaces are structural in Line
- * Protocol and must be backslash-escaped.
- */
-function escapeMeasurement(value: string): string {
-  return value.replace(/([,\s])/g, "\\$1");
-}
-
-/**
- * Escapes a tag key, tag value, or field key. Commas, equals signs, and
- * spaces separate elements and must be escaped.
- */
-function escapeTagComponent(value: string): string {
-  return value.replace(/([,=\s])/g, "\\$1");
-}
-
-const escapeFieldKey = escapeTagComponent;
-
-/**
- * Escapes a string field value, which is transmitted inside double quotes.
- */
-function escapeStringFieldValue(value: string): string {
-  return value.replace(/([\\"])/g, "\\$1");
-}
-
-function rejectLineBreaks(kind: string, value: string): void {
-  if (/[\n\r]/.test(value)) {
-    throw new TypeError(
-      `Line Protocol ${kind} must not contain a newline or carriage return.`,
-    );
-  }
-}
-
-function serializeFieldValue(key: string, value: PointFieldValue): string {
-  switch (typeof value) {
-    case "string":
-      rejectLineBreaks(`field value for "${key}"`, value);
-      return `"${escapeStringFieldValue(value)}"`;
-    case "boolean":
-      return value ? "true" : "false";
-    case "bigint":
-      return `${value.toString()}i`;
-    case "number":
-      if (!Number.isFinite(value)) {
-        throw new TypeError(
-          `Field "${key}" must be a finite number; received ${String(value)}.`,
-        );
-      }
-      // Line Protocol accepts exponent notation, so the default JavaScript
-      // representation is always valid.
-      return String(value);
-    default:
-      throw new TypeError(
-        `Field "${key}" has unsupported type ${describe(value)}. ` +
-          `Use string, number, bigint, or boolean.`,
-      );
-  }
-}
-
-function describe(value: unknown): string {
-  if (value === null) return "null";
-  return typeof value;
-}
-
-function serializeTimestamp(
-  timestamp: Date | number | bigint,
-  precision: TimePrecision,
-): string {
-  if (timestamp instanceof Date) {
-    const milliseconds = timestamp.getTime();
-    if (Number.isNaN(milliseconds)) {
-      throw new TypeError("Point timestamp is an invalid Date.");
-    }
-    return (BigInt(milliseconds) * MS_MULTIPLIER[precision]).toString();
-  }
-  if (typeof timestamp === "bigint") {
-    return timestamp.toString();
-  }
-  if (typeof timestamp !== "number" || !Number.isSafeInteger(timestamp)) {
-    throw new TypeError(
-      `Point timestamp must be a Date, a safe integer, or a bigint; ` +
-        `received ${String(timestamp)}.`,
-    );
-  }
-  return timestamp.toString();
-}
+import type { Point, PointFieldValue, TimePrecision } from "../types/index.js";
+import {
+  escapeFieldKey,
+  escapeMeasurement,
+  escapeTagComponent,
+  rejectLineBreaks,
+} from "./escape.js";
+import { describe, serializeFieldValue } from "./field.js";
+import { serializeTimestamp } from "./timestamp.js";
 
 /**
  * Serializes a single {@link Point} into one Line Protocol line.
