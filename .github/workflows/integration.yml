@@ -1,15 +1,10 @@
 name: Integration
 
 on:
+  # Runs on every pull request rather than a filtered set of paths: this is a
+  # required status check, and a required check that never starts leaves the
+  # pull request permanently pending. The job takes under a minute.
   pull_request:
-    paths:
-      - "src/**"
-      - "tests/**"
-      - "scripts/**"
-      - "package.json"
-      - "package-lock.json"
-      - "vitest.integration.config.ts"
-      - ".github/workflows/integration.yml"
   push:
     branches: [main]
   workflow_dispatch:
