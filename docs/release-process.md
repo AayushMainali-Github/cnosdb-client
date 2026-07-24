@@ -10,6 +10,17 @@ Each user-facing pull request carries a changeset created with
 lands in `.changeset/` with the code it describes. Version selection rules are in
 [versioning-policy.md](versioning-policy.md).
 
+Changeset summaries keep each paragraph on one line. Changesets reproduces the
+text verbatim in `CHANGELOG.md` and in the release pull request body, and GitHub
+turns a single newline inside a pull request body into a line break, so
+hard-wrapped prose arrives broken mid-sentence.
+
+For the same reason `CHANGELOG.md` begins with its heading and nothing else.
+Changesets inserts each new release immediately below that heading, so any
+introductory prose there ends up beneath the newest entry and reads as though it
+belongs to that release. Context that would otherwise live there belongs in this
+document or in [versioning-policy.md](versioning-policy.md).
+
 ## 2. The release pull request
 
 When changesets reach `main`, the release workflow opens or updates a single

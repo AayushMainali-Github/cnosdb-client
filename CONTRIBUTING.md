@@ -126,6 +126,12 @@ Write the changeset for the person reading release notes, not for the reviewer:
 - Good: "Preserve CnosDB response bodies on rate-limit errors to improve retry diagnostics."
 - Bad: "Refactored request handler."
 
+Keep each paragraph of the summary on a single line, however long. Unlike the
+rest of the repository, changeset prose must not be hard-wrapped: Changesets
+copies it verbatim into `CHANGELOG.md` and into the release pull request body,
+and GitHub renders a single newline inside a pull request body as a line break.
+A summary wrapped at 80 columns therefore arrives with breaks mid-sentence.
+
 A changeset is usually unnecessary for test-only, CI-only, or internal
 refactoring changes with provably unchanged behaviour. Say why in the pull
 request and apply the `no-changeset` label.

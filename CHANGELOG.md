@@ -1,8 +1,5 @@
 # Changelog
 
-All notable changes to this project are documented in this file. Versions
-follow the policy described in [docs/versioning-policy.md](docs/versioning-policy.md).
-
 ## 0.1.0 - 2026-07-24
 
 ### Added

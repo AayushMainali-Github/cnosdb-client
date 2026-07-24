@@ -317,6 +317,13 @@ npm run smoke            # tarball install into clean ESM, CJS, and TS consumers
 See [docs/development-workflow.md](docs/development-workflow.md) and
 [docs/architecture.md](docs/architecture.md).
 
+## Versioning
+
+This package is pre-1.0, so treat any minor bump as potentially breaking. The
+exact guarantees are in
+[docs/versioning-policy.md](docs/versioning-policy.md), and released changes are
+listed in [CHANGELOG.md](CHANGELOG.md).
+
 ## Contributing
 
 Contributions are welcome. Work normally starts with an accepted issue and
