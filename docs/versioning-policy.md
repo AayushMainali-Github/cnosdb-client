@@ -57,7 +57,8 @@ exports guarantees:
 
 Not part of the public API, and changeable in a patch:
 
-- internal modules such as `src/http.ts`, including `Transport`;
+- internal modules such as everything under `src/http/`, including `Transport`;
+- the arrangement of files within `src/`, and any folder's internal exports;
 - exact wording of error messages;
 - internal helper names;
 - the shape of `cause` values passed through from the runtime;

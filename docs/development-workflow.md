@@ -110,7 +110,7 @@ A complete pass through the process, for a feature that does not exist yet:
 1. **Issue #12** is opened: "Add chunked query streaming."
 2. **Triage** labels it `type: feature`, `area: client`, `status: accepted`.
 3. **Branch** `feat/12-add-chunked-query-streaming` is created from `main`.
-4. **Implement** the streaming query path in `src/client.ts` and `src/http.ts`.
+4. **Implement** the streaming query path in `src/client/` and `src/http/`.
 5. **Test**: unit tests with an injected `fetch` producing a chunked body, plus an integration test against a real server.
 6. **Document**: a README section, and an ADR recording the bounded-memory design.
 7. **Changeset**: `npm run changeset` → `minor` → "Add `queryStream()` for reading large result sets without buffering the whole response."
