@@ -48,6 +48,17 @@ jobs:
       - name: Verify the release candidate
         run: npm run check
 
+      # changesets/action would otherwise author release commits as
+      # github-actions[bot]. GitHub treats a bot author as an unrecognised
+      # contributor and holds the release PR's workflow runs in action_required
+      # until a maintainer approves them, which blocks the required checks. The
+      # noreply address is the maintainer's, so commits stay attributed to a real
+      # account without publishing a private address.
+      - name: Attribute release commits to the maintainer
+        run: |
+          git config user.name "AayushMainali-Github"
+          git config user.email "94561475+AayushMainali-Github@users.noreply.github.com"
+
       - name: Create release pull request or publish
         uses: changesets/action@v1
         with:
@@ -55,6 +66,7 @@ jobs:
           publish: npx changeset publish
           title: "chore(release): version cnosdb-client"
           commit: "chore(release): version cnosdb-client"
+          setupGitUser: false
         env:
           # GitHub does not dispatch workflow events for activity performed with
           # GITHUB_TOKEN, so a release PR opened with it starts no checks and can
