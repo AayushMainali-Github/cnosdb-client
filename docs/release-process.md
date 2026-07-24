@@ -32,6 +32,14 @@ pull request titled `chore(release): version cnosdb-client`. It contains only:
 
 It is never auto-merged.
 
+Its commits are attributed to the maintainer rather than to
+`github-actions[bot]`, because GitHub holds workflow runs from an unrecognised
+bot author in `action_required` until someone approves them. While runs are held,
+the required checks never report and the pull request cannot be merged. If a
+release pull request ever shows no checks and a blocked merge, open the Actions
+tab, approve the waiting runs, and confirm this attribution step is still in
+place.
+
 ## 3. Release review
 
 Before merging, verify:
