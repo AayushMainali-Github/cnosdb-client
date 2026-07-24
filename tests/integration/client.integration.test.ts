@@ -3,7 +3,7 @@ import { setTimeout as sleep } from "node:timers/promises";
 
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
-import { CnosDBClient } from "../../src/client.js";
+import { CnosDBClient } from "../../src/client/index.js";
 import { CnosDBRequestError } from "../../src/errors/index.js";
 import type { PingResult } from "../../src/types/index.js";
 import { captureError } from "../helpers.js";

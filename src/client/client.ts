@@ -1,10 +1,10 @@
-import { CnosDBResponseError } from "./errors/index.js";
+import { CnosDBResponseError } from "../errors/index.js";
 import {
   createAuthorizationHeader,
   normalizeBaseUrl,
   Transport,
-} from "./http/index.js";
-import { serializePoints } from "./line-protocol/index.js";
+} from "../http/index.js";
+import { serializePoints } from "../line-protocol/index.js";
 import type {
   CnosDBClientOptions,
   Point,
@@ -13,17 +13,23 @@ import type {
   RequestOptions,
   TimePrecision,
   WriteOptions,
-} from "./types/index.js";
-
-const DEFAULT_DATABASE = "public";
-const DEFAULT_TENANT = "cnosdb";
-const DEFAULT_TIMEOUT_MS = 10_000;
-const DEFAULT_PRECISION: TimePrecision = "ms";
-const PRECISIONS: readonly TimePrecision[] = ["ms", "us", "ns"];
-
-const PING_PATH = "api/v1/ping";
-const SQL_PATH = "api/v1/sql";
-const WRITE_PATH = "api/v1/write";
+} from "../types/index.js";
+import { requestControls } from "./controls.js";
+import {
+  DEFAULT_DATABASE,
+  DEFAULT_PRECISION,
+  DEFAULT_TENANT,
+  DEFAULT_TIMEOUT_MS,
+  PING_PATH,
+  SQL_PATH,
+  WRITE_PATH,
+} from "./defaults.js";
+import {
+  assertNonEmpty,
+  assertOptionalString,
+  assertPrecision,
+  requireStatement,
+} from "./validate.js";
 
 /**
  * A client for the CnosDB HTTP API.
@@ -239,50 +245,5 @@ export class CnosDBClient {
       tenant: options.tenant ?? this.#tenant,
       chunked: "false",
     };
-  }
-}
-
-function requestControls(
-  options: RequestOptions,
-): Pick<{ signal?: AbortSignal; timeoutMs?: number }, "signal" | "timeoutMs"> {
-  return {
-    ...(options.signal === undefined ? {} : { signal: options.signal }),
-    ...(options.timeoutMs === undefined
-      ? {}
-      : { timeoutMs: options.timeoutMs }),
-  };
-}
-
-function requireStatement(statement: string): string {
-  if (typeof statement !== "string" || statement.trim().length === 0) {
-    throw new TypeError("SQL statement must be a non-empty string.");
-  }
-  return statement;
-}
-
-function assertNonEmpty(name: string, value: string): void {
-  if (typeof value !== "string" || value.trim().length === 0) {
-    throw new TypeError(
-      `CnosDB client option \`${name}\` must be a non-empty string.`,
-    );
-  }
-}
-
-function assertOptionalString(name: string, value: unknown): void {
-  if (value !== undefined && typeof value !== "string") {
-    throw new TypeError(
-      `CnosDB client option \`${name}\` must be a string when provided.`,
-    );
-  }
-}
-
-function assertPrecision(
-  precision: unknown,
-): asserts precision is TimePrecision {
-  if (!PRECISIONS.includes(precision as TimePrecision)) {
-    throw new TypeError(
-      `\`precision\` must be one of ${PRECISIONS.join(", ")}; ` +
-        `received ${String(precision)}.`,
-    );
   }
 }

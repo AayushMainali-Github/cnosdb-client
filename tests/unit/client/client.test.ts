@@ -1,12 +1,15 @@
 import { describe, expect, it } from "vitest";
 
-import { CnosDBClient } from "../../src/client.js";
+import { CnosDBClient } from "../../../src/client/index.js";
 import {
   CnosDBRequestError,
   CnosDBResponseError,
-} from "../../src/errors/index.js";
-import type { CnosDBClientOptions, FetchLike } from "../../src/types/index.js";
-import { captureError, toUrl } from "../helpers.js";
+} from "../../../src/errors/index.js";
+import type {
+  CnosDBClientOptions,
+  FetchLike,
+} from "../../../src/types/index.js";
+import { captureError, toUrl } from "../../helpers.js";
 
 interface Recorded {
   url: URL;
