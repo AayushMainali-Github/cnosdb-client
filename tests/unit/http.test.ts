@@ -9,7 +9,7 @@ import {
   CnosDBResponseError,
   CnosDBServerError,
   CnosDBTimeoutError,
-} from "../../src/errors.js";
+} from "../../src/errors/index.js";
 import {
   createAuthorizationHeader,
   MAX_RESPONSE_BODY_CHARS,

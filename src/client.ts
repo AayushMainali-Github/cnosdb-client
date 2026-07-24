@@ -1,4 +1,4 @@
-import { CnosDBResponseError } from "./errors.js";
+import { CnosDBResponseError } from "./errors/index.js";
 import {
   createAuthorizationHeader,
   normalizeBaseUrl,

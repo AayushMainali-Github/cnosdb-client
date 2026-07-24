@@ -9,8 +9,8 @@ export {
   CnosDBResponseError,
   CnosDBServerError,
   CnosDBTimeoutError,
-} from "./errors.js";
-export type { CnosDBErrorOptions } from "./errors.js";
+} from "./errors/index.js";
+export type { CnosDBErrorOptions } from "./errors/index.js";
 export type {
   CnosDBClientOptions,
   FetchLike,
