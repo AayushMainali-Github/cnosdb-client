@@ -1,5 +1,10 @@
 # cnosdb-client
 
+[![npm version](https://img.shields.io/npm/v/cnosdb-client.svg)](https://www.npmjs.com/package/cnosdb-client)
+[![CI](https://github.com/AayushMainali-Github/cnosdb-client/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/AayushMainali-Github/cnosdb-client/actions/workflows/ci.yml)
+[![Node.js](https://img.shields.io/node/v/cnosdb-client.svg)](https://nodejs.org)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 A small, dependency-free TypeScript client for the CnosDB HTTP API.
 
 > **Unofficial project:** `cnosdb-client` is an independent, community-maintained client. It is not affiliated with, endorsed by, or maintained by the CnosDB project.
