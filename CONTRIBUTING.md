@@ -74,6 +74,27 @@ docs/31-improve-authentication-guide
 
 There is no `develop` branch. `main` is always releasable.
 
+## Where code goes
+
+`src/` is grouped into one folder per domain — `types/`, `errors/`,
+`line-protocol/`, `http/`, and `client/` — each with an `index.ts` barrel. Add
+code to the folder that owns the concern, and export it from that barrel only if
+another folder needs it.
+
+Cross-folder imports go through the barrel, never into a sibling's internals:
+import from `../http/index.js`, not `../http/transport.js`. Files inside one
+folder import each other directly. Unit tests are the exception and import the
+specific file under test, so a failure names the unit that broke.
+
+New public types go in `types/` and must be re-exported from `src/index.ts` to
+reach consumers. `tests/unit/public-api.test.ts` asserts the exact published
+export set, so it will fail until you do — that is deliberate, since adding to
+the public surface is a decision, not a side effect.
+
+[docs/architecture.md](docs/architecture.md) describes the layout, and
+[ADR-0008](docs/adr/0008-group-source-into-domain-folders.md) records why it is
+this shape.
+
 ## Coding standards
 
 - TypeScript is strict. Do not weaken `tsconfig.json` to make an error go away.

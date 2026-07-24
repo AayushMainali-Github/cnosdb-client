@@ -1,26 +1,60 @@
 # Architecture
 
-`cnosdb-client` is deliberately small: five source modules, no runtime
-dependencies, and one public class. This document explains how the pieces fit
-together and why the boundaries are where they are.
+`cnosdb-client` is deliberately small: no runtime dependencies and one public
+class. This document explains how the pieces fit together and why the boundaries
+are where they are.
 
 ## Modules
 
-| Module                 | Responsibility                                              | Public? |
-| ---------------------- | ----------------------------------------------------------- | ------- |
-| `src/types.ts`         | Public type definitions and TSDoc                           | Yes     |
-| `src/errors.ts`        | Error classes and status-to-error mapping                   | Yes     |
-| `src/line-protocol.ts` | Pure Line Protocol serialization                            | Partly  |
-| `src/http.ts`          | Internal transport: URLs, auth, timeouts, response handling | No      |
-| `src/client.ts`        | `CnosDBClient`, thin orchestration over the two below       | Yes     |
-| `src/index.ts`         | The package's entire public surface                         | Yes     |
+Source is grouped into five domain folders. Each owns one concern and exposes an
+`index.ts` barrel.
+
+| Folder               | Responsibility                                              | Public? |
+| -------------------- | ----------------------------------------------------------- | ------- |
+| `src/types/`         | Public type definitions and TSDoc                           | Yes     |
+| `src/errors/`        | Error classes and status-to-error mapping                   | Yes     |
+| `src/line-protocol/` | Pure Line Protocol serialization                            | Partly  |
+| `src/http/`          | Internal transport: URLs, auth, timeouts, response handling | No      |
+| `src/client/`        | `CnosDBClient`, thin orchestration over the two below       | Yes     |
+| `src/index.ts`       | The package's entire public surface                         | Yes     |
+
+Within each folder:
+
+| Folder           | Files                                                          |
+| ---------------- | -------------------------------------------------------------- |
+| `types/`         | `common`, `client-options`, `request-options`, `point`, `ping` |
+| `errors/`        | `base`, `http-status`, `transport`, `response`, `from-status`  |
+| `line-protocol/` | `escape`, `field`, `timestamp`, `serialize`                    |
+| `http/`          | `url`, `auth`, `body`, `guards`, `transport`                   |
+| `client/`        | `defaults`, `validate`, `controls`, `client`                   |
+
+### The barrel rule
+
+A module importing from another folder goes through that folder's `index.ts` and
+never reaches into a sibling's internals. So `client/client.ts` imports from
+`../http/index.js`, not from `../http/transport.js`. Within a folder, files
+import each other directly, because they are one unit.
+
+This keeps each folder's internals free to change without a cross-folder ripple,
+and it makes the barrel the honest statement of what that folder offers. Unit
+tests are the deliberate exception: they import the specific file under test, so
+a failure names the unit rather than the folder.
+
+### Where new code goes
+
+Add to the folder that owns the concern, and export from its barrel only if
+another folder needs it. A new error class joins the group matching its cause. A
+new escaping rule belongs in `line-protocol/escape.ts`, not inline in
+`serialize.ts`. New public types join `types/` and must be re-exported from
+`src/index.ts` to reach consumers.
 
 `src/index.ts` re-exports named symbols only. There is no wildcard export, so
 internal helpers such as `Transport` and `normalizeBaseUrl` cannot leak into the
 public API by accident. The package smoke test asserts this against the built
-tarball.
+tarball, and `tests/unit/public-api.test.ts` asserts the exact export set, so an
+accidental addition or removal fails a test rather than reaching a release.
 
-From `line-protocol.ts` only `serializePoint` is public; `serializePoints`,
+From `line-protocol/` only `serializePoint` is public; `serializePoints`,
 which joins a batch, is internal.
 
 ## Layering

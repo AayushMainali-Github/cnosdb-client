@@ -16,6 +16,7 @@ constraint and an accident.
 | [0005](0005-use-issue-first-github-flow.md)         | Use issue-first GitHub Flow         | Accepted |
 | [0006](0006-disable-automatic-retries-in-v0.1.0.md) | Disable automatic retries in v0.1.0 | Accepted |
 | [0007](0007-use-unofficial-independent-branding.md) | Use unofficial independent branding | Accepted |
+| [0008](0008-group-source-into-domain-folders.md)    | Group source into domain folders    | Accepted |
 
 ## When to write one
 
