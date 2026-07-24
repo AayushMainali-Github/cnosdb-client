@@ -29,14 +29,19 @@ jobs:
         with:
           fetch-depth: 0
 
+      # Use the newest Node 22, not the package's minimum supported version:
+      # current npm releases require a recent 22.x patch, and the engine floor
+      # in package.json is a requirement for consumers, not for this runner.
       - uses: actions/setup-node@v7
         with:
-          node-version: 22.14.0
+          node-version: 22
           cache: npm
 
       # Trusted publishing requires npm 11.5.1 or newer.
       - name: Use an npm version that supports trusted publishing
-        run: npm install --global npm@latest
+        run: |
+          npm install --global npm@latest
+          npm --version
 
       - run: npm ci
 
