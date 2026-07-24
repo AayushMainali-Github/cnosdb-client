@@ -1,0 +1,52 @@
+name: PR title
+
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize]
+
+permissions:
+  contents: read
+
+jobs:
+  pr-title:
+    name: PR title
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      # A short inline script is auditable and needs no third-party action.
+      - name: Validate Conventional Commit format
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          pattern='^(feat|fix|docs|test|refactor|perf|build|ci|chore|revert|security)(\([a-z0-9-]+\))?!?: .+'
+
+          # Changesets opens the release PR with a fixed title; allow it explicitly.
+          if [ "$PR_TITLE" = "chore(release): version cnosdb-client" ]; then
+            echo "Release pull request title accepted."
+            exit 0
+          fi
+
+          if printf '%s' "$PR_TITLE" | grep -Eq "$pattern"; then
+            echo "PR title is valid: $PR_TITLE"
+            exit 0
+          fi
+
+          echo "::error::Invalid PR title: $PR_TITLE"
+          cat <<'EOF'
+          The pull request title becomes the squashed commit message and must
+          follow Conventional Commits:
+
+            <type>(<optional scope>): <description>
+
+          Allowed types:
+            feat, fix, docs, test, refactor, perf, build, ci, chore, revert, security
+
+          Examples:
+            feat(client): add configurable query timeout
+            fix(protocol): escape string-field backslashes
+            docs(readme): explain Basic authentication
+
+          Scopes are lowercase letters, digits, and hyphens. Do not include the
+          issue number; link it in the PR body with "Closes #12".
+          EOF
+          exit 1

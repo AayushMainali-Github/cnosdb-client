@@ -1,0 +1,63 @@
+name: Integration
+
+on:
+  pull_request:
+    paths:
+      - "src/**"
+      - "tests/**"
+      - "scripts/**"
+      - "package.json"
+      - "package-lock.json"
+      - "vitest.integration.config.ts"
+      - ".github/workflows/integration.yml"
+  push:
+    branches: [main]
+  workflow_dispatch:
+  schedule:
+    # Weekly, to catch upstream changes in cnosdb/cnosdb:community-latest.
+    - cron: "0 6 * * 1"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: integration-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  integration:
+    name: Integration tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      CNOSDB_IMAGE: cnosdb/cnosdb:community-latest
+      CNOSDB_URL: http://127.0.0.1:8902
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Start CnosDB
+        run: |
+          docker run -d --name cnosdb-ci -p 8902:8902 "$CNOSDB_IMAGE"
+          docker image inspect "$CNOSDB_IMAGE" \
+            --format 'Image digest: {{index .RepoDigests 0}}'
+
+      - name: Wait for CnosDB to become healthy
+        run: node scripts/wait-for-cnosdb.mjs "$CNOSDB_URL" 120000
+
+      - name: Run integration tests
+        run: npm run test:integration
+
+      - name: Container logs on failure
+        if: failure()
+        run: docker logs cnosdb-ci --tail 200
+
+      - name: Stop and remove CnosDB
+        if: always()
+        run: docker rm -f cnosdb-ci || true

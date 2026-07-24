@@ -1,0 +1,56 @@
+# npm trusted publishing matches on this workflow's filename. Do not rename
+# this file after configuring the trusted publisher in the npm package
+# settings, or publishing will fail until npm is updated to match.
+name: Release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write # create tags and releases
+      pull-requests: write # open and update the release PR
+      id-token: write # npm trusted publishing via OIDC
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22.14.0
+          cache: npm
+
+      # Trusted publishing requires npm 11.5.1 or newer.
+      - name: Use an npm version that supports trusted publishing
+        run: npm install --global npm@latest
+
+      - run: npm ci
+
+      - name: Verify the release candidate
+        run: npm run check
+
+      - name: Create release pull request or publish
+        uses: changesets/action@v1
+        with:
+          version: npm run version
+          publish: npx changeset publish
+          title: "chore(release): version cnosdb-client"
+          commit: "chore(release): version cnosdb-client"
+        env:
+          # Swap for a GitHub App token or CHANGESETS_GITHUB_TOKEN if required
+          # checks must run on the release PR. See docs/release-process.md.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

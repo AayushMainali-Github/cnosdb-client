@@ -1,0 +1,53 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "type: maintenance"
+    commit-message:
+      prefix: "chore(deps)"
+      prefix-development: "chore(deps-dev)"
+    groups:
+      # Grouping keeps review noise low: one PR per concern, not one per package.
+      typescript-and-linting:
+        patterns:
+          - "typescript"
+          - "typescript-eslint"
+          - "@typescript-eslint/*"
+          - "eslint"
+          - "@eslint/*"
+          - "prettier"
+      testing:
+        patterns:
+          - "vitest"
+          - "@vitest/*"
+      build-and-release:
+        patterns:
+          - "tsup"
+          - "@changesets/*"
+          - "publint"
+          - "@arethetypeswrong/*"
+      types:
+        patterns:
+          - "@types/*"
+
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "area: ci"
+    commit-message:
+      prefix: "ci(deps)"
+    groups:
+      github-actions:
+        patterns:
+          - "*"

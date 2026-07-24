@@ -1,0 +1,114 @@
+name: Bug report
+description: Report incorrect behaviour in cnosdb-client
+title: "[Bug]: "
+labels: ["type: bug", "status: needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug.
+
+        **Do not report security vulnerabilities here.** Follow
+        [SECURITY.md](https://github.com/AayushMainali-Github/cnosdb-client/blob/main/SECURITY.md)
+        instead.
+
+        Please remove passwords, tokens, hostnames, and real data from anything you paste.
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: A clear, one-paragraph description of what is wrong.
+      placeholder: writePoints rejects a valid point when a field value is ...
+    validations:
+      required: true
+
+  - type: input
+    id: package-version
+    attributes:
+      label: cnosdb-client version
+      description: Output of `npm list cnosdb-client`.
+      placeholder: 0.1.0
+    validations:
+      required: true
+
+  - type: input
+    id: node-version
+    attributes:
+      label: Node.js version
+      description: Output of `node --version`.
+      placeholder: v22.14.0
+    validations:
+      required: true
+
+  - type: input
+    id: cnosdb-version
+    attributes:
+      label: CnosDB version
+      description: The `version` returned by `ping()`, or the Docker image tag.
+      placeholder: 2.4.3 (cnosdb/cnosdb:community-latest)
+    validations:
+      required: true
+
+  - type: input
+    id: os
+    attributes:
+      label: Operating system
+      placeholder: Ubuntu 24.04 / macOS 15.1 / Windows 11
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal reproduction
+      description: The smallest complete code sample that shows the problem.
+      render: typescript
+      placeholder: |
+        import { CnosDBClient } from "cnosdb-client";
+
+        const client = new CnosDBClient({ url: "http://localhost:8902" });
+        await client.writePoints({ measurement: "m", fields: { a: 1 } });
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behaviour
+      description: Include the error `name`, `message`, and `status` if there is one.
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Sanitized logs or stack trace
+      description: Optional. Redact credentials, hostnames, and data before pasting.
+      render: shell
+
+  - type: checkboxes
+    id: secrets
+    attributes:
+      label: Secret check
+      options:
+        - label: I have removed all passwords, tokens, and real data from this report.
+          required: true
+
+  - type: dropdown
+    id: contribute
+    attributes:
+      label: Would you like to submit a fix?
+      options:
+        - "No"
+        - "Yes, if a maintainer confirms the approach"
+        - "Yes"
+    validations:
+      required: true

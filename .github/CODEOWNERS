@@ -1,0 +1,15 @@
+# Code owners are requested for review automatically.
+# See https://docs.github.com/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default owner for everything not matched below.
+*                   @AayushMainali-Github
+
+# Sensitive paths: repository automation, release tooling, dependencies,
+# security and governance policy, and the published source.
+/.github/           @AayushMainali-Github
+/.changeset/        @AayushMainali-Github
+/package.json       @AayushMainali-Github
+/package-lock.json  @AayushMainali-Github
+/SECURITY.md        @AayushMainali-Github
+/GOVERNANCE.md      @AayushMainali-Github
+/src/               @AayushMainali-Github

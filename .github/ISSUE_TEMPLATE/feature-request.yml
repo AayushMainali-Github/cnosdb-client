@@ -1,0 +1,70 @@
+name: Feature request
+description: Propose new functionality for cnosdb-client
+title: "[Feature]: "
+labels: ["type: feature", "status: needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the proposal.
+
+        This package is deliberately small. Please check
+        [ROADMAP.md](https://github.com/AayushMainali-Github/cnosdb-client/blob/main/ROADMAP.md)
+        first — some ideas are explicitly out of scope, and others are already planned.
+
+        Describing the **problem** you have is more persuasive than describing the API you want.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What are you trying to do, and what makes it hard today?
+      placeholder: I ingest 50k points per minute and have to split batches by hand because ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behaviour
+      description: What should the package do instead?
+    validations:
+      required: true
+
+  - type: textarea
+    id: api
+    attributes:
+      label: User-facing API sketch
+      description: Optional. Rough code showing how it would be used.
+      render: typescript
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: What have you tried, and why is it not enough?
+    validations:
+      required: true
+
+  - type: dropdown
+    id: compatibility
+    attributes:
+      label: Compatibility impact
+      options:
+        - "Additive: no existing behaviour changes"
+        - "Changes existing behaviour"
+        - "Breaking change"
+        - "Not sure"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: contribute
+    attributes:
+      label: Would you like to implement this?
+      options:
+        - "No"
+        - "Yes, if a maintainer accepts the proposal"
+        - "Yes"
+    validations:
+      required: true

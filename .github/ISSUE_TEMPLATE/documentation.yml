@@ -1,0 +1,56 @@
+name: Documentation
+description: Report something unclear, missing, or wrong in the documentation
+title: "[Docs]: "
+labels: ["type: documentation", "status: needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Documentation problems are real problems. Thanks for reporting one.
+
+        Small fixes are welcome as a pull request referencing this issue.
+
+  - type: input
+    id: location
+    attributes:
+      label: Page or section
+      description: File and heading, or a link.
+      placeholder: README.md — "Point value and timestamp rules"
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What is wrong or missing?
+      description: Quote the text if it is short.
+    validations:
+      required: true
+
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: Suggested correction
+      description: Optional, but the fastest route to a fix.
+
+  - type: dropdown
+    id: code-affected
+    attributes:
+      label: Is the code behaviour also wrong?
+      description: If the docs describe the intended behaviour and the code disagrees, this may be a bug too.
+      options:
+        - "No, only the documentation is wrong"
+        - "Yes, the code behaves incorrectly as well"
+        - "Not sure"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: contribute
+    attributes:
+      label: Would you like to submit the fix?
+      options:
+        - "No"
+        - "Yes"
+    validations:
+      required: true

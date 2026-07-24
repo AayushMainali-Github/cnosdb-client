@@ -1,0 +1,61 @@
+# Path-based labels applied to pull requests.
+# Used by actions/labeler; see .github/workflows/ci.yml.
+
+"area: client":
+  - changed-files:
+      - any-glob-to-any-file:
+          - "src/client.ts"
+          - "src/index.ts"
+
+"area: http":
+  - changed-files:
+      - any-glob-to-any-file: "src/http.ts"
+
+"area: line-protocol":
+  - changed-files:
+      - any-glob-to-any-file: "src/line-protocol.ts"
+
+"area: types":
+  - changed-files:
+      - any-glob-to-any-file: "src/types.ts"
+
+"area: testing":
+  - changed-files:
+      - any-glob-to-any-file:
+          - "tests/**"
+          - "vitest.config.ts"
+          - "vitest.integration.config.ts"
+
+"area: documentation":
+  - changed-files:
+      - any-glob-to-any-file:
+          - "**/*.md"
+          - "docs/**"
+          - "examples/**"
+
+"area: ci":
+  - changed-files:
+      - any-glob-to-any-file:
+          - ".github/workflows/**"
+          - ".github/dependabot.yml"
+          - ".github/labeler.yml"
+
+"area: release":
+  - changed-files:
+      - any-glob-to-any-file:
+          - ".changeset/**"
+          - "scripts/package-smoke-test.mjs"
+          - "tsup.config.ts"
+
+"area: governance":
+  - changed-files:
+      - any-glob-to-any-file:
+          - "GOVERNANCE.md"
+          - "MAINTAINERS.md"
+          - "CODE_OF_CONDUCT.md"
+          - "CONTRIBUTING.md"
+          - ".github/CODEOWNERS"
+
+"type: security":
+  - changed-files:
+      - any-glob-to-any-file: "SECURITY.md"

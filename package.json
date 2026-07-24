@@ -1,0 +1,91 @@
+{
+  "name": "cnosdb-client",
+  "version": "0.1.0",
+  "description": "Unofficial, community-maintained TypeScript client for the CnosDB HTTP API",
+  "keywords": [
+    "cnosdb",
+    "time-series",
+    "timeseries",
+    "database",
+    "typescript",
+    "nodejs",
+    "client",
+    "iot",
+    "sql",
+    "line-protocol"
+  ],
+  "license": "MIT",
+  "author": "Aayush Mainali <aayushmainali.codes@gmail.com> (https://github.com/AayushMainali-Github)",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AayushMainali-Github/cnosdb-client.git"
+  },
+  "bugs": {
+    "url": "https://github.com/AayushMainali-Github/cnosdb-client/issues"
+  },
+  "homepage": "https://github.com/AayushMainali-Github/cnosdb-client#readme",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=22.14.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "clean": "node -e \"fs.rmSync('dist',{recursive:true,force:true})\"",
+    "build": "npm run clean && tsup",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run tests/unit",
+    "test:unit": "vitest run tests/unit",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
+    "test:coverage": "vitest run tests/unit --coverage",
+    "pack:check": "npm pack --dry-run",
+    "package:validate": "publint --strict && attw --pack .",
+    "smoke": "node scripts/package-smoke-test.mjs",
+    "check": "npm run format:check && npm run lint && npm run typecheck && npm run test:coverage && npm run build && npm run package:validate",
+    "changeset": "changeset",
+    "version": "changeset version",
+    "release": "npm run check && changeset publish"
+  },
+  "devDependencies": {
+    "@arethetypeswrong/cli": "^0.18.5",
+    "@changesets/changelog-github": "^0.7.0",
+    "@changesets/cli": "^2.31.1",
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^26.1.1",
+    "@vitest/coverage-v8": "^4.1.10",
+    "eslint": "^10.7.0",
+    "prettier": "^3.9.6",
+    "publint": "^0.3.22",
+    "tsup": "^8.5.1",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.65.0",
+    "vitest": "^4.1.10"
+  }
+}
