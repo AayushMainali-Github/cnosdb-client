@@ -3,7 +3,7 @@ import {
   createAuthorizationHeader,
   normalizeBaseUrl,
   Transport,
-} from "./http.js";
+} from "./http/index.js";
 import { serializePoints } from "./line-protocol/index.js";
 import type {
   CnosDBClientOptions,

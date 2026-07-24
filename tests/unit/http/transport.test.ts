@@ -9,154 +9,20 @@ import {
   CnosDBResponseError,
   CnosDBServerError,
   CnosDBTimeoutError,
-} from "../../src/errors/index.js";
+} from "../../../src/errors/index.js";
+import { createAuthorizationHeader } from "../../../src/http/auth.js";
+import { MAX_RESPONSE_BODY_CHARS, truncate } from "../../../src/http/body.js";
+import type { FetchLike } from "../../../src/types/index.js";
+import { captureError } from "../../helpers.js";
 import {
-  createAuthorizationHeader,
-  MAX_RESPONSE_BODY_CHARS,
-  normalizeBaseUrl,
-  Transport,
-  truncate,
-} from "../../src/http.js";
-import type { FetchLike } from "../../src/types/index.js";
-import { captureError, toUrl } from "../helpers.js";
-
-interface Recorded {
-  url: URL;
-  init: RequestInit;
-}
-
-function recordingFetch(
-  responder: (call: Recorded) => Response | Promise<Response> = () =>
-    new Response("{}", {
-      status: 200,
-      headers: { "content-type": "application/json" },
-    }),
-): { fetch: FetchLike; calls: Recorded[] } {
-  const calls: Recorded[] = [];
-  const fetch: FetchLike = (input, init = {}) => {
-    const call = { url: toUrl(input), init };
-    calls.push(call);
-    return Promise.resolve(responder(call));
-  };
-  return { fetch, calls };
-}
-
-/** A fetch that never resolves until its signal aborts. */
-const hangingFetch: FetchLike = (_input, init) =>
-  new Promise((_resolve, reject) => {
-    init?.signal?.addEventListener("abort", () => {
-      reject(new DOMException("aborted", "AbortError"));
-    });
-  });
-
-function makeTransport(
-  fetchImpl: FetchLike,
-  overrides: {
-    url?: string;
-    authorization?: string | undefined;
-    timeoutMs?: number;
-  } = {},
-): Transport {
-  return new Transport({
-    baseUrl: normalizeBaseUrl(overrides.url ?? "http://localhost:8902"),
-    authorization: overrides.authorization,
-    timeoutMs: overrides.timeoutMs ?? 10_000,
-    fetch: fetchImpl,
-  });
-}
-
-function headerOf(call: Recorded, name: string): string | undefined {
-  return (call.init.headers as Record<string, string> | undefined)?.[name];
-}
+  hangingFetch,
+  headerOf,
+  makeTransport,
+  recordingFetch,
+} from "./helpers.js";
 
 afterEach(() => {
   vi.restoreAllMocks();
-});
-
-describe("normalizeBaseUrl", () => {
-  it("accepts a base URL without a trailing slash", () => {
-    expect(normalizeBaseUrl("http://localhost:8902").href).toBe(
-      "http://localhost:8902/",
-    );
-  });
-
-  it("accepts a base URL with a trailing slash", () => {
-    expect(normalizeBaseUrl("http://localhost:8902/").href).toBe(
-      "http://localhost:8902/",
-    );
-  });
-
-  it("accepts https", () => {
-    expect(normalizeBaseUrl("https://db.example.com").protocol).toBe("https:");
-  });
-
-  it("preserves and terminates a base path", () => {
-    expect(normalizeBaseUrl("https://example.com/cnosdb").href).toBe(
-      "https://example.com/cnosdb/",
-    );
-  });
-
-  it("discards a query string on the base URL", () => {
-    expect(normalizeBaseUrl("http://localhost:8902/?a=b").href).toBe(
-      "http://localhost:8902/",
-    );
-  });
-
-  it("rejects a relative URL", () => {
-    expect(() => normalizeBaseUrl("/api/v1")).toThrow(/absolute URL/);
-  });
-
-  it("rejects a host-only value that is not a URL", () => {
-    expect(() => normalizeBaseUrl("localhost:8902")).toThrow(/http: or https:/);
-  });
-
-  it("rejects a non-http protocol", () => {
-    expect(() => normalizeBaseUrl("ftp://localhost")).toThrow(
-      /http: or https:/,
-    );
-  });
-
-  it("rejects embedded credentials", () => {
-    expect(() => normalizeBaseUrl("http://root:pw@localhost:8902")).toThrow(
-      /must not embed credentials/,
-    );
-  });
-
-  it("rejects a fragment", () => {
-    expect(() => normalizeBaseUrl("http://localhost:8902/#frag")).toThrow(
-      /fragment/,
-    );
-  });
-
-  it("rejects an empty value", () => {
-    expect(() => normalizeBaseUrl("")).toThrow(/is required/);
-  });
-});
-
-describe("createAuthorizationHeader", () => {
-  it("returns undefined when no credentials are configured", () => {
-    expect(createAuthorizationHeader(undefined, undefined)).toBeUndefined();
-  });
-
-  it("encodes username and password as UTF-8 Base64", () => {
-    expect(createAuthorizationHeader("root", "pw")).toBe(
-      `Basic ${Buffer.from("root:pw", "utf8").toString("base64")}`,
-    );
-  });
-
-  it("supports an empty password", () => {
-    expect(createAuthorizationHeader("root", "")).toBe("Basic cm9vdDo=");
-  });
-
-  it("supports a username with no password supplied", () => {
-    expect(createAuthorizationHeader("root", undefined)).toBe("Basic cm9vdDo=");
-  });
-
-  it("encodes non-ASCII credentials as UTF-8", () => {
-    expect(createAuthorizationHeader("üser", "pä")).toBe(
-      `Basic ${Buffer.from("üser:pä", "utf8").toString("base64")}`,
-    );
-  });
 });
 
 describe("Transport request construction", () => {
