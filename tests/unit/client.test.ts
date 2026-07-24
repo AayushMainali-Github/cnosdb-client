@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { CnosDBClient } from "../../src/client.js";
 import { CnosDBRequestError, CnosDBResponseError } from "../../src/errors.js";
-import type { CnosDBClientOptions, FetchLike } from "../../src/types.js";
+import type { CnosDBClientOptions, FetchLike } from "../../src/types/index.js";
 import { captureError, toUrl } from "../helpers.js";
 
 interface Recorded {

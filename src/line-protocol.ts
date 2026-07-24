@@ -1,4 +1,4 @@
-import type { Point, PointFieldValue, TimePrecision } from "./types.js";
+import type { Point, PointFieldValue, TimePrecision } from "./types/index.js";
 
 /**
  * Multipliers converting milliseconds into the requested precision.

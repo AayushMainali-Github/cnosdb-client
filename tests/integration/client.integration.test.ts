@@ -5,7 +5,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { CnosDBClient } from "../../src/client.js";
 import { CnosDBRequestError } from "../../src/errors.js";
-import type { PingResult } from "../../src/types.js";
+import type { PingResult } from "../../src/types/index.js";
 import { captureError } from "../helpers.js";
 
 /**

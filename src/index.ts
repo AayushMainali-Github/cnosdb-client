@@ -21,4 +21,4 @@ export type {
   RequestOptions,
   TimePrecision,
   WriteOptions,
-} from "./types.js";
+} from "./types/index.js";

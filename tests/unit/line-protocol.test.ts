@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { serializePoint } from "../../src/line-protocol.js";
-import type { Point } from "../../src/types.js";
+import type { Point } from "../../src/types/index.js";
 
 describe("serializePoint", () => {
   describe("valid points", () => {
