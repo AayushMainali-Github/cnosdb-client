@@ -28,6 +28,13 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
+          # changesets/action pushes the release branch with plain git, which
+          # uses the credential actions/checkout persists here rather than the
+          # token in the step's env. Left as the default GITHUB_TOKEN, the push
+          # is attributed to github-actions[bot], and GitHub holds the release
+          # PR's workflow runs in action_required, so the required checks on
+          # main can never pass. See docs/release-process.md.
+          token: ${{ secrets.CHANGESETS_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
 
       # Use the newest Node 22, not the package's minimum supported version:
       # current npm releases require a recent 22.x patch, and the engine floor
@@ -48,12 +55,10 @@ jobs:
       - name: Verify the release candidate
         run: npm run check
 
-      # changesets/action would otherwise author release commits as
-      # github-actions[bot]. GitHub treats a bot author as an unrecognised
-      # contributor and holds the release PR's workflow runs in action_required
-      # until a maintainer approves them, which blocks the required checks. The
-      # noreply address is the maintainer's, so commits stay attributed to a real
-      # account without publishing a private address.
+      # Keeps release commits attributed to a real account rather than
+      # github-actions[bot]. The noreply address avoids publishing a private
+      # one. Authorship alone does not decide whether the release PR's checks
+      # run; the push credential configured in the checkout step above does.
       - name: Attribute release commits to the maintainer
         run: |
           git config user.name "AayushMainali-Github"
