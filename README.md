@@ -188,8 +188,12 @@ const { columns, rows } = await client.queryTable(
 ```
 
 Every row has exactly one value per column, so a NULL stays visible as an empty
-string rather than vanishing. The columns are reported even when no rows match,
-which means an empty result can still be rendered with its headings.
+string rather than vanishing.
+
+On CnosDB 2.4.3 the columns are reported even when no rows match, so an empty
+result can still be rendered with its headings. Do not rely on that below 2.4.3:
+2.4.1 returns an empty body for an empty result, and `columns` is then also
+empty. `rows` is empty either way.
 
 Values are raw strings. CnosDB sends no column types over HTTP in any response
 format, so converting them would mean guessing, and a wrong guess on a large

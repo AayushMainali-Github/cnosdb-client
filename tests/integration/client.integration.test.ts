@@ -303,14 +303,18 @@ describe("queryTable", () => {
     expect(result.rows[0]).toHaveLength(2);
   });
 
-  it("reports columns for an empty result set", async () => {
+  it("returns no rows for an empty result set", async () => {
     const result = await client.queryTable(
       `SELECT v, city FROM ${table} WHERE city = 'nowhere-at-all'`,
       { database },
     );
 
-    expect(result.columns).toEqual(["v", "city"]);
     expect(result.rows).toEqual([]);
+    // Whether the columns survive an empty result is version-dependent: 2.4.3
+    // sends the header row, 2.4.1 sends an empty body. Both are accepted here
+    // because the ping version cannot tell those releases apart — 2.4.1
+    // reports itself as 2.4.0.
+    expect([[], ["v", "city"]]).toContainEqual(result.columns);
   });
 
   it("keeps a NULL column aligned instead of dropping it", async () => {

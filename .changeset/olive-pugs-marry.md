@@ -2,7 +2,7 @@
 "cnosdb-client": minor
 ---
 
-Add `client.queryTable()`, which returns a result's columns alongside its rows. It requests CSV, the only CnosDB response format that carries column names in their true order, so the columns come back in the order the statement selected them and every row has exactly one value per column. The columns are reported even when no rows match, so an empty result can still be rendered with its headings.
+Add `client.queryTable()`, which returns a result's columns alongside its rows. It requests CSV, the only CnosDB response format that carries column names in their true order, so the columns come back in the order the statement selected them and every row has exactly one value per column. On CnosDB 2.4.3 the columns survive an empty result, so a table with no matching rows can still be rendered with its headings; 2.4.1 returns an empty body instead and reports no columns.
 
 This matters because the JSON format used by `query()` sorts keys alphabetically and omits any column that is NULL for a given row, which makes row objects differ in shape and hides nulls entirely. Both behaviours are now documented in `docs/compatibility.md`.
 

@@ -8,8 +8,11 @@
  */
 export interface QueryTable {
   /**
-   * Column names in the order the server produced them. Present even when
-   * `rows` is empty, so an empty result can still be rendered with headings.
+   * Column names in the order the server produced them.
+   *
+   * On CnosDB 2.4.3 these survive an empty result, so a table with no matching
+   * rows can still be rendered with its headings. Older servers, including
+   * 2.4.1, return an empty body instead and this is then empty too.
    */
   readonly columns: readonly string[];
 
