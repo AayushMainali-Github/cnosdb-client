@@ -2,6 +2,7 @@ import { CnosDBResponseError } from "../errors/index.js";
 import {
   createAuthorizationHeader,
   normalizeBaseUrl,
+  normalizeHeaders,
   Transport,
 } from "../http/index.js";
 import { serializePoints } from "../line-protocol/index.js";
@@ -100,6 +101,7 @@ export class CnosDBClient {
         options.password,
       ),
       timeoutMs,
+      headers: normalizeHeaders(options.headers, "headers"),
       // Bind so that a supplied global `fetch` keeps its expected receiver.
       fetch: fetchImpl.bind(globalThis),
     });

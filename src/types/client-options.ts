@@ -45,6 +45,15 @@ export interface CnosDBClientOptions {
   readonly precision?: TimePrecision;
 
   /**
+   * Extra headers sent with every request, for gateways or proxies that
+   * require them. Header names are case-insensitive.
+   *
+   * `authorization`, `content-type`, and `accept` are controlled by the client
+   * and are rejected here, as is any value containing a line break.
+   */
+  readonly headers?: Readonly<Record<string, string>>;
+
+  /**
    * Injectable fetch implementation for tests or controlled environments.
    * Captured once at construction time.
    */

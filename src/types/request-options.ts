@@ -14,6 +14,13 @@ export interface RequestOptions {
    * Overrides the client-level timeout for this request only.
    */
   readonly timeoutMs?: number;
+
+  /**
+   * Extra headers for this request, merged over the client-level `headers`
+   * and overriding them by name. The same restrictions apply: the client
+   * controls `authorization`, `content-type`, and `accept`.
+   */
+  readonly headers?: Readonly<Record<string, string>>;
 }
 
 /**
