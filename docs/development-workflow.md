@@ -77,10 +77,23 @@ message. Body links the issue with `Closes #12` and completes the template.
 
 ## 6. CI and review
 
-Eleven checks are required to merge: Format, Lint, Typecheck, Unit tests
-(Node 22), Unit tests (Node 24), Coverage, Package validation, Package smoke
-test, Integration tests, PR title, and Dependency review. Package validation and
-Package smoke test both build the package, so a broken build fails them.
+Thirteen checks are required to merge:
+
+| Check                                 | What it guards                            |
+| ------------------------------------- | ----------------------------------------- |
+| Format                                | Prettier formatting                       |
+| Lint                                  | ESLint, type-aware                        |
+| Typecheck                             | `tsc --noEmit`                            |
+| Unit tests (Node 22)                  | Suite on the minimum supported Node       |
+| Unit tests (Node 24)                  | Suite on current Node                     |
+| Coverage                              | Coverage thresholds                       |
+| Package validation                    | `publint` and `attw`; also builds         |
+| Package smoke test                    | Installs the tarball in ESM, CJS, and TS  |
+| Integration tests (community-latest)  | Live server, moving tag                   |
+| Integration tests (community-2.4.3.4) | Live server, newest pinned patch          |
+| Integration tests (community-2.4.1)   | Live server, oldest supported version     |
+| PR title                              | Conventional Commits                      |
+| Dependency review                     | Vulnerable or badly licensed dependencies |
 
 The Label job is intentionally not required. It only applies labels, so blocking
 merges on it would add no signal.
@@ -88,6 +101,30 @@ merges on it would add no signal.
 Branches must be up to date with `main` before merging, history stays linear,
 and every conversation must be resolved. Reviewers look at correctness,
 security, public API shape, tests, and documentation.
+
+### Renaming a CI job is a two-part change
+
+Required checks are matched by name, so renaming a job silently removes the
+check that protection still demands, and every pull request then blocks. Update
+the ruleset in the same change as the workflow.
+
+The failure mode is deceptive, so it is worth recognising: the pull request
+shows every check green, `mergeable: MERGEABLE`, and a `SUCCESS` rollup, while
+merging fails with only "the base branch policy prohibits the merge". Compare
+the two lists when that happens:
+
+```bash
+gh api repos/<owner>/<repo>/rules/branches/main \
+  --jq '.[] | select(.type=="required_status_checks")
+        | [.parameters.required_status_checks[].context]'
+gh pr checks <number> | cut -f1
+```
+
+`main` is protected by a **single** mechanism, the `main protection` ruleset
+under Settings → Rules. Classic branch protection was removed in
+[#49](https://github.com/AayushMainali-Github/cnosdb-client/issues/49): the two
+enforced required checks independently, and updating only one produced exactly
+the deadlock above. Do not reintroduce it; add rules to the ruleset instead.
 
 ## 7. Squash merge
 
