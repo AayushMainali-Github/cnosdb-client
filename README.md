@@ -13,6 +13,7 @@ A small, dependency-free TypeScript client for the CnosDB HTTP API.
 
 - Health checks, SQL queries, SQL execution, and time-series writes.
 - Deterministic Line Protocol serialization from plain JavaScript objects.
+- A `sql` tagged template that escapes interpolated values as SQL literals.
 - Typed errors for authentication, rate limiting, timeouts, network failures, and malformed responses.
 - Per-client and per-request timeouts, plus `AbortSignal` cancellation.
 - Opt-in retries with jittered backoff, off by default and never retrying a write unless you say so.
@@ -199,6 +200,37 @@ throws and those rows stay consumed — you are looking at a partial result. SQL
 errors still arrive as an HTTP error before any row is sent. Breaking out of
 the loop, or aborting `options.signal`, cancels the underlying response so the
 connection is not left half-read.
+
+## Escaping SQL values
+
+CnosDB's HTTP API has no bound parameters. If a value comes from outside your
+code, build the statement with `sql` so the value is encoded as a literal
+rather than concatenated by hand:
+
+```ts
+import { sql } from "cnosdb-client";
+
+const site = "pokhara";
+const rows = await client.query(
+  sql`SELECT * FROM sensors WHERE site = ${site} AND active = ${true}`,
+);
+```
+
+Only interpolated values are touched. Identifiers, keywords, and clause
+structure stay in the literal parts of the template — passing a table name
+through a hole produces a quoted string, not an identifier.
+
+| Value                                            | Encoded as                      |
+| ------------------------------------------------ | ------------------------------- |
+| `null`                                           | `NULL`                          |
+| `boolean`                                        | `true` / `false`                |
+| finite `number` / `bigint`                       | decimal literal                 |
+| `string`                                         | `'…'` with every `'` doubled    |
+| `Date`                                           | `TIMESTAMP '…'` in UTC ISO-8601 |
+| anything else, `NaN`, `Infinity`, invalid `Date` | throws `TypeError`              |
+
+CnosDB string literals use SQL-standard quoting: a single quote is escaped by
+doubling it. Backslash is not an escape, so `sql` does not treat it as one.
 
 ## Querying with column metadata
 
@@ -483,11 +515,12 @@ client.writePoints(points: Point | readonly Point[], options?: WriteOptions): Pr
 
 serializePoint(point: Point, precision?: TimePrecision): string
 splitPoints(points: readonly Point[], options: SplitOptions): Generator<string>
+sql(strings, ...values: SqlValue[]): string
 ```
 
 Exported types: `CnosDBClientOptions`, `RequestOptions`, `QueryOptions`,
 `WriteOptions`, `RetryOptions`, `BackoffOptions`, `SplitOptions`, `PingResult`,
-`QueryTable`, `Point`, `PointFieldValue`, `TimePrecision`, `Compression`,
+`QueryTable`, `Point`, `PointFieldValue`, `SqlValue`, `TimePrecision`, `Compression`,
 `FetchLike`, and `CnosDBErrorOptions`.
 
 ## Compatibility

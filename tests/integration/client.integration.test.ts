@@ -6,6 +6,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { CnosDBClient } from "../../src/client/index.js";
 import { CnosDBRequestError } from "../../src/errors/index.js";
 import { splitPoints } from "../../src/line-protocol/index.js";
+import { sql } from "../../src/sql/index.js";
 import type { FetchLike, PingResult } from "../../src/types/index.js";
 import { captureError } from "../helpers.js";
 
@@ -121,6 +122,45 @@ describe("execute", () => {
     expect(error).toBeInstanceOf(CnosDBRequestError);
     expect(error.status).toBeGreaterThanOrEqual(400);
     expect(error.responseBody).toBeTruthy();
+  });
+});
+
+describe("sql escaping", () => {
+  it("round-trips adversarial string literals through a live query", async () => {
+    const samples = [
+      "plain",
+      "a'b",
+      "a''b",
+      "a\\b",
+      "a\\'b",
+      'a"b',
+      "line\nbreak",
+      "x' OR '1'='1",
+    ];
+
+    for (const [index, sample] of samples.entries()) {
+      const rows = await client.query<{ s: string }[]>(
+        sql`SELECT ${sample} AS s`,
+        { database },
+      );
+      expect(rows[0]?.s, `sample ${String(index)}`).toBe(sample);
+    }
+  });
+
+  it("encodes null, boolean, number, and timestamp literals the server accepts", async () => {
+    const when = new Date("2024-06-01T12:00:00.000Z");
+    const rows = await client.query<
+      { a: null; b: boolean; n: number; t: string }[]
+    >(sql`SELECT ${null} AS a, ${true} AS b, ${42} AS n, ${when} AS t`, {
+      database,
+    });
+    // JSON omits NULL columns, so `a` is absent rather than null.
+    expect(rows[0]).toMatchObject({
+      b: true,
+      n: 42,
+      t: "2024-06-01T12:00:00",
+    });
+    expect("a" in (rows[0] ?? {})).toBe(false);
   });
 });
 

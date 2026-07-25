@@ -15,6 +15,7 @@ import type {
   RequestOptions,
   RetryOptions,
   SplitOptions,
+  SqlValue,
   TimePrecision,
   WriteOptions,
 } from "../../src/index.js";
@@ -36,6 +37,7 @@ const EXPECTED_RUNTIME_EXPORTS = [
   "CnosDBTimeoutError",
   "serializePoint",
   "splitPoints",
+  "sql",
 ] as const;
 
 describe("public API surface", () => {
@@ -49,6 +51,7 @@ describe("public API surface", () => {
     expect(typeof publicApi.CnosDBClient).toBe("function");
     expect(typeof publicApi.serializePoint).toBe("function");
     expect(typeof publicApi.splitPoints).toBe("function");
+    expect(typeof publicApi.sql).toBe("function");
   });
 
   it("preserves the error hierarchy", () => {
@@ -98,6 +101,7 @@ describe("public API surface", () => {
     };
     const table: QueryTable = { columns: ["a"], rows: [["1"]] };
     const splitOptions: SplitOptions = { maxBytes: 1_000, precision };
+    const sqlValue: SqlValue = "site-1";
     const fieldValue: PointFieldValue = 1;
     const point: Point = {
       measurement: "m",
@@ -110,6 +114,7 @@ describe("public API surface", () => {
     expect(writeOptions.precision).toBe("ms");
     expect(table.columns).toEqual(["a"]);
     expect(splitOptions.maxBytes).toBe(1_000);
+    expect(sqlValue).toBe("site-1");
     expect(retry.attempts).toBe(2);
     expect(point.measurement).toBe("m");
     expect(ping.status).toBe("healthy");
