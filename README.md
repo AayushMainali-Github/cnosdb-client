@@ -343,9 +343,17 @@ Exported types: `CnosDBClientOptions`, `RequestOptions`, `QueryOptions`,
 
 ## Compatibility
 
-See [docs/compatibility.md](docs/compatibility.md) for the tested matrix. This
-release is tested against Node.js 22 and 24 and CnosDB 2.4.3 from the
-`cnosdb/cnosdb:community-latest` image.
+Tested against Node.js 22 and 24, and against three CnosDB servers on every
+pull request: `community-latest`, the pinned `community-2.4.3.4`, and
+`community-2.4.1`.
+
+**CnosDB 2.4.1 is the oldest supported server.** 2.4.0 specifically is not
+supported: it stores Line Protocol string escapes literally and drops the
+connection on a compressed write. Both 2.3.5 and 2.4.1 are fine, so 2.4.0 is an
+isolated bad release rather than the start of a range.
+
+See [docs/compatibility.md](docs/compatibility.md) for the full matrix and the
+evidence behind each verdict.
 
 ## Security notes
 
