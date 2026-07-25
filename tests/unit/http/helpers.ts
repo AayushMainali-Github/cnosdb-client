@@ -1,4 +1,5 @@
 import { normalizeBaseUrl } from "../../../src/http/url.js";
+import type { ResolvedRetry } from "../../../src/http/retry.js";
 import { Transport } from "../../../src/http/transport.js";
 import type { FetchLike } from "../../../src/types/index.js";
 import { toUrl } from "../../helpers.js";
@@ -39,6 +40,7 @@ export function makeTransport(
     authorization?: string | undefined;
     timeoutMs?: number;
     headers?: Record<string, string>;
+    retry?: ResolvedRetry;
   } = {},
 ): Transport {
   return new Transport({
@@ -47,6 +49,7 @@ export function makeTransport(
     timeoutMs: overrides.timeoutMs ?? 10_000,
     fetch: fetchImpl,
     ...(overrides.headers === undefined ? {} : { headers: overrides.headers }),
+    ...(overrides.retry === undefined ? {} : { retry: overrides.retry }),
   });
 }
 

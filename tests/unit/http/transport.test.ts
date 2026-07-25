@@ -203,6 +203,7 @@ describe("Transport status mapping", () => {
     const broken = {
       ok: false,
       status: 500,
+      headers: new Headers(),
       text: () => Promise.reject(new Error("stream failure")),
     } as unknown as Response;
     const { fetch } = recordingFetch(() => broken);

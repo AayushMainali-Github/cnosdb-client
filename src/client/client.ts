@@ -3,6 +3,7 @@ import {
   createAuthorizationHeader,
   normalizeBaseUrl,
   normalizeHeaders,
+  normalizeRetry,
   Transport,
 } from "../http/index.js";
 import { serializePoints } from "../line-protocol/index.js";
@@ -60,6 +61,7 @@ export class CnosDBClient {
   readonly #tenant: string;
   readonly #precision: TimePrecision;
   readonly #compression: Compression;
+  readonly #retryWrites: boolean;
 
   constructor(options: CnosDBClientOptions) {
     // Runtime guards throughout the constructor protect JavaScript callers,
@@ -99,6 +101,9 @@ export class CnosDBClient {
       );
     }
 
+    const retry = normalizeRetry(options.retry);
+    this.#retryWrites = retry?.retryWrites ?? false;
+
     this.#database = database;
     this.#tenant = tenant;
     this.#precision = precision;
@@ -111,6 +116,7 @@ export class CnosDBClient {
       ),
       timeoutMs,
       headers: normalizeHeaders(options.headers, "headers"),
+      ...(retry === undefined ? {} : { retry }),
       // Bind so that a supplied global `fetch` keeps its expected receiver.
       fetch: fetchImpl.bind(globalThis),
     });
@@ -126,6 +132,7 @@ export class CnosDBClient {
       method: "GET",
       path: PING_PATH,
       accept: "application/json",
+      retryable: true,
       ...requestControls(options),
     });
 
@@ -155,6 +162,11 @@ export class CnosDBClient {
    *
    * Statements that produce no rows (for example DDL) resolve to `undefined`
    * cast to `T`; prefer {@link CnosDBClient.execute} for those.
+   *
+   * This method is retried when a retry policy is configured, on the
+   * assumption that a statement sent through `query` is a read. Send anything
+   * that changes data through {@link CnosDBClient.execute} instead, which is
+   * never retried.
    */
   async query<T = unknown>(
     statement: string,
@@ -168,6 +180,7 @@ export class CnosDBClient {
       body: sql,
       contentType: "text/plain; charset=utf-8",
       accept: "application/json",
+      retryable: true,
       ...requestControls(options),
     });
     return result as T;
@@ -197,6 +210,7 @@ export class CnosDBClient {
       body: sql,
       contentType: "text/plain; charset=utf-8",
       accept: "application/csv",
+      retryable: true,
       ...requestControls(options),
     });
 
@@ -210,6 +224,10 @@ export class CnosDBClient {
   /**
    * Executes a SQL statement whose result rows are not needed, such as DDL.
    * Any 2xx response counts as success and the body is discarded.
+   *
+   * Never retried, even with a retry policy configured: this method exists for
+   * statements that change something, and the client cannot tell whether a
+   * failed attempt took effect before the connection broke.
    */
   async execute(statement: string, options: QueryOptions = {}): Promise<void> {
     const sql = requireStatement(statement);
@@ -227,7 +245,8 @@ export class CnosDBClient {
   /**
    * Writes a raw Line Protocol payload.
    *
-   * The payload is sent verbatim: it is neither validated, split, nor retried.
+   * The payload is sent verbatim: it is neither validated nor split, and it
+   * is retried only when the retry policy sets `retryWrites`.
    */
   async writeLineProtocol(
     data: string,
@@ -275,6 +294,7 @@ export class CnosDBClient {
       contentType: "text/plain; charset=utf-8",
       accept: "application/json",
       compression: this.#resolveCompression(options),
+      retryable: this.#retryWrites,
       ...requestControls(options),
     });
   }

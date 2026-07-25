@@ -13,6 +13,7 @@ export {
 } from "./errors/index.js";
 export type { CnosDBErrorOptions } from "./errors/index.js";
 export type {
+  BackoffOptions,
   CnosDBClientOptions,
   Compression,
   FetchLike,
@@ -22,6 +23,7 @@ export type {
   QueryOptions,
   QueryTable,
   RequestOptions,
+  RetryOptions,
   TimePrecision,
   WriteOptions,
 } from "./types/index.js";

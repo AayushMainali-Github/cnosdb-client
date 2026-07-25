@@ -6,7 +6,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { CnosDBClient } from "../../src/client/index.js";
 import { CnosDBRequestError } from "../../src/errors/index.js";
 import { splitPoints } from "../../src/line-protocol/index.js";
-import type { PingResult } from "../../src/types/index.js";
+import type { FetchLike, PingResult } from "../../src/types/index.js";
 import { captureError } from "../helpers.js";
 
 /**
@@ -302,6 +302,72 @@ describe("splitPoints", () => {
       { database },
     );
     expect(rows[0]!.total).toBe(60);
+  });
+});
+
+describe("retries", () => {
+  /**
+   * Wraps the real fetch so the first `failures` calls fail the way a dropped
+   * connection does. Everything after that reaches the live server, which is
+   * the point: it proves a retried request still succeeds for real.
+   */
+  function flakyFetch(failures: number): {
+    fetch: FetchLike;
+    calls: () => number;
+  } {
+    let seen = 0;
+    const fetch: FetchLike = (input, init) => {
+      seen += 1;
+      if (seen <= failures) {
+        return Promise.reject(new TypeError("fetch failed"));
+      }
+      return globalThis.fetch(input, init);
+    };
+    return { fetch, calls: () => seen };
+  }
+
+  it("recovers from a transient failure and returns real rows", async () => {
+    const { fetch, calls } = flakyFetch(2);
+    const flaky = new CnosDBClient({
+      url: baseUrl,
+      username: USERNAME,
+      password: PASSWORD,
+      timeoutMs: 30_000,
+      fetch,
+      retry: { attempts: 3, backoff: { initialMs: 10, maxMs: 50 } },
+    });
+
+    const result = await flaky.ping();
+    expect(result.status).toBe("healthy");
+    expect(calls()).toBe(3);
+  });
+
+  it("gives up after the configured attempts", async () => {
+    const { fetch, calls } = flakyFetch(Number.POSITIVE_INFINITY);
+    const doomed = new CnosDBClient({
+      url: baseUrl,
+      fetch,
+      retry: { attempts: 2, backoff: { initialMs: 10, maxMs: 20 } },
+    });
+
+    await captureError(doomed.ping());
+    expect(calls()).toBe(2);
+  });
+
+  it("does not retry a write unless the caller opts in", async () => {
+    const { fetch, calls } = flakyFetch(1);
+    const noWriteRetry = new CnosDBClient({
+      url: baseUrl,
+      username: USERNAME,
+      password: PASSWORD,
+      fetch,
+      retry: { attempts: 3, backoff: { initialMs: 10, maxMs: 20 } },
+    });
+
+    await captureError(
+      noWriteRetry.writeLineProtocol("retry_guard v=1", { database }),
+    );
+    expect(calls()).toBe(1);
   });
 });
 

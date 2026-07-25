@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import * as publicApi from "../../src/index.js";
 import type {
+  BackoffOptions,
   CnosDBClientOptions,
   CnosDBErrorOptions,
   Compression,
@@ -12,6 +13,7 @@ import type {
   QueryOptions,
   QueryTable,
   RequestOptions,
+  RetryOptions,
   SplitOptions,
   TimePrecision,
   WriteOptions,
@@ -77,10 +79,13 @@ describe("public API surface", () => {
     const precision: TimePrecision = "ms";
     const compression: Compression = "gzip";
     const fetchLike: FetchLike = () => Promise.resolve(new Response());
+    const backoff: BackoffOptions = { initialMs: 10, maxMs: 20, jitter: false };
+    const retry: RetryOptions = { attempts: 2, backoff, retryWrites: false };
     const clientOptions: CnosDBClientOptions = {
       url: "http://localhost:8902",
       precision,
       compression,
+      retry,
       headers: { "x-api-key": "k" },
       fetch: fetchLike,
     };
@@ -105,6 +110,7 @@ describe("public API surface", () => {
     expect(writeOptions.precision).toBe("ms");
     expect(table.columns).toEqual(["a"]);
     expect(splitOptions.maxBytes).toBe(1_000);
+    expect(retry.attempts).toBe(2);
     expect(point.measurement).toBe("m");
     expect(ping.status).toBe("healthy");
     expect(errorOptions.cause).toBeInstanceOf(Error);
