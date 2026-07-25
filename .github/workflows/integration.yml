@@ -21,11 +21,28 @@ concurrency:
 
 jobs:
   integration:
-    name: Integration tests
+    # Every listed version is required rather than informational. The pinned
+    # tags are immutable, so they cannot break on their own, and an
+    # informational failure nobody must act on is one nobody reads.
+    name: Integration tests (${{ matrix.image }})
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    strategy:
+      # One version failing should not hide the result for the others, which
+      # is the whole point of testing a matrix.
+      fail-fast: false
+      matrix:
+        image:
+          # Moving tag: the early warning for upstream changes.
+          - community-latest
+          # Newest pinned patch, so a green run is reproducible.
+          - community-2.4.3.4
+          # Oldest supported server. 2.4.0 is deliberately absent: it mangles
+          # Line Protocol string escapes and drops gzip connections. See
+          # docs/compatibility.md.
+          - community-2.4.1
     env:
-      CNOSDB_IMAGE: cnosdb/cnosdb:community-latest
+      CNOSDB_IMAGE: cnosdb/cnosdb:${{ matrix.image }}
       CNOSDB_URL: http://127.0.0.1:8902
     steps:
       - uses: actions/checkout@v7

@@ -6,6 +6,54 @@ because it "should work".
 | cnosdb-client version | Node versions | Tested CnosDB version / image            | Notes                                                        |
 | --------------------- | ------------- | ---------------------------------------- | ------------------------------------------------------------ |
 | 0.1.0                 | 22, 24        | 2.4.3 — `cnosdb/cnosdb:community-latest` | Verified locally on Node 24.5.0 and in CI on Node 22 and 24. |
+| 0.2.0                 | 22, 24        | 2.4.1, 2.4.3.x, `community-latest`       | Server matrix runs on every pull request; see below.         |
+
+## Supported CnosDB versions
+
+Every pull request runs the full integration suite against three images, all of
+them required to pass:
+
+| Image               | Role                      | Result            |
+| ------------------- | ------------------------- | ----------------- |
+| `community-latest`  | Moving tag, early warning | All 18 tests pass |
+| `community-2.4.3.4` | Newest pinned patch       | All 18 tests pass |
+| `community-2.4.1`   | Oldest supported server   | All 18 tests pass |
+
+**CnosDB 2.4.1 is the supported floor.** Older servers were probed by hand and
+are recorded below, honestly labelled as not covered by CI.
+
+| Image               | Verdict           | Detail                                                                                       |
+| ------------------- | ----------------- | -------------------------------------------------------------------------------------------- |
+| `community-2.4.0`   | **Not supported** | Mangles Line Protocol string escapes and closes the connection on a gzip write. See below.   |
+| `community-2.3.5.4` | Partially working | Data plane behaves correctly, including gzip and escaping, but passwords are never enforced. |
+
+### Why 2.4.0 is excluded
+
+2.4.0 is a single broken release between two working ones: 2.3.5 is fine and
+2.4.1 is fine. Two failures were reproduced directly against it.
+
+Line Protocol string escapes are stored literally rather than unescaped. Writing
+`s="a\"b\\c"` and reading it back yields `a\"b\\c` instead of `a"b\c`, so any
+string field containing a quote or a backslash comes back corrupted.
+
+A write carrying `Content-Encoding: gzip` gets no HTTP response at all; the
+connection is dropped, which surfaces as `CnosDBNetworkError` rather than a
+clean rejection.
+
+Neither is something the client can work around, so 2.4.0 is excluded rather
+than accommodated.
+
+### Password enforcement arrived in 2.4.x
+
+On 2.3.5.4, setting `auth_enabled = true` does not make the server verify
+passwords: `root` with a deliberately wrong password still returns HTTP 200.
+Only an unknown user is rejected. Everything else this client does works on
+2.3.5.4, so it is listed as partially working rather than unsupported, but do
+not rely on it to authenticate anyone.
+
+Note also that `community-2.4.1` reports its version as `2.4.0` from
+`/api/v1/ping`, so the ping string is not a reliable way to tell those two
+apart.
 
 The tested server reported:
 
@@ -18,12 +66,11 @@ digest:  sha256:0f4d84d3f2e82765a8db2a5d6778b5a73aad5bb46fb1fcefd5a2d4836c938f2a
 
 ## Reproducibility tradeoff
 
-Integration tests run against the mutable `community-latest` tag, so the exact
-server version changes over time and a green run today does not guarantee an
-identical run next month. The tradeoff is deliberate: the moving tag surfaces
-upstream API changes early, which is exactly what an unofficial client needs to
-know about. The integration suite prints the server version it tested against,
-and that version is recorded in the table above.
+The matrix runs the mutable `community-latest` tag alongside two pinned tags.
+The moving tag surfaces upstream API changes early, which is what an unofficial
+client needs; the pinned tags mean a green run stays reproducible even after
+`latest` moves. The integration suite prints the server version it tested
+against.
 
 Pin a specific image when you need a reproducible run:
 
@@ -89,7 +136,7 @@ meaning. Classifying it from the message text would break on any wording change.
 ## Known gaps in test coverage
 
 - Rate limiting (HTTP 429) is not exercised against a live server.
-- Only the `community-latest` image is tested; see [issue #32](https://github.com/AayushMainali-Github/cnosdb-client/issues/32).
+- Enterprise builds and clustered deployments are untested; every result here comes from a single-node community container.
 
 ## Node.js support
 
