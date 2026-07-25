@@ -15,6 +15,8 @@ export interface TransportOptions {
   readonly authorization: string | undefined;
   readonly timeoutMs: number;
   readonly fetch: FetchLike;
+  /** Already normalized by {@link normalizeHeaders}. */
+  readonly headers?: Readonly<Record<string, string>>;
 }
 
 /** @internal */
@@ -28,6 +30,8 @@ export interface TransportRequest {
   readonly accept?: string;
   readonly signal?: AbortSignal;
   readonly timeoutMs?: number;
+  /** Already normalized by {@link normalizeHeaders}. */
+  readonly headers?: Readonly<Record<string, string>>;
 }
 
 /**
@@ -43,12 +47,14 @@ export class Transport {
   readonly #authorization: string | undefined;
   readonly #timeoutMs: number;
   readonly #fetch: FetchLike;
+  readonly #headers: Readonly<Record<string, string>>;
 
   constructor(options: TransportOptions) {
     this.#baseUrl = options.baseUrl;
     this.#authorization = options.authorization;
     this.#timeoutMs = options.timeoutMs;
     this.#fetch = options.fetch;
+    this.#headers = options.headers ?? {};
   }
 
   /**
@@ -61,7 +67,13 @@ export class Transport {
       url.searchParams.set(key, value);
     }
 
-    const headers: Record<string, string> = {};
+    // Caller headers are applied first, then the transport's own, so the
+    // headers this client owns win even if a reserved name somehow got past
+    // validation. Per-request headers override client-level ones by name.
+    const headers: Record<string, string> = {
+      ...this.#headers,
+      ...request.headers,
+    };
     if (this.#authorization !== undefined) {
       headers["authorization"] = this.#authorization;
     }

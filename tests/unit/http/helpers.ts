@@ -38,6 +38,7 @@ export function makeTransport(
     url?: string;
     authorization?: string | undefined;
     timeoutMs?: number;
+    headers?: Record<string, string>;
   } = {},
 ): Transport {
   return new Transport({
@@ -45,6 +46,7 @@ export function makeTransport(
     authorization: overrides.authorization,
     timeoutMs: overrides.timeoutMs ?? 10_000,
     fetch: fetchImpl,
+    ...(overrides.headers === undefined ? {} : { headers: overrides.headers }),
   });
 }
 

@@ -74,16 +74,17 @@ console.log(rows);
 
 ## Configuration
 
-| Option      | Type                   | Default    | Description                            |
-| ----------- | ---------------------- | ---------- | -------------------------------------- |
-| `url`       | `string`               | _required_ | Absolute `http:` or `https:` base URL. |
-| `username`  | `string`               | —          | Basic-auth username.                   |
-| `password`  | `string`               | —          | Basic-auth password; may be empty.     |
-| `database`  | `string`               | `"public"` | Default database.                      |
-| `tenant`    | `string`               | `"cnosdb"` | Default tenant.                        |
-| `timeoutMs` | `number`               | `10000`    | Default request timeout.               |
-| `precision` | `"ms" \| "us" \| "ns"` | `"ms"`     | Default write precision.               |
-| `fetch`     | `FetchLike`            | global     | Injectable fetch, mainly for tests.    |
+| Option      | Type                    | Default    | Description                            |
+| ----------- | ----------------------- | ---------- | -------------------------------------- |
+| `url`       | `string`                | _required_ | Absolute `http:` or `https:` base URL. |
+| `username`  | `string`                | —          | Basic-auth username.                   |
+| `password`  | `string`                | —          | Basic-auth password; may be empty.     |
+| `database`  | `string`                | `"public"` | Default database.                      |
+| `tenant`    | `string`                | `"cnosdb"` | Default tenant.                        |
+| `timeoutMs` | `number`                | `10000`    | Default request timeout.               |
+| `precision` | `"ms" \| "us" \| "ns"`  | `"ms"`     | Default write precision.               |
+| `headers`   | `Record<string,string>` | —          | Extra headers sent with every request. |
+| `fetch`     | `FetchLike`             | global     | Injectable fetch, mainly for tests.    |
 
 The constructor rejects a relative URL, a non-HTTP protocol, a URL fragment,
 and a URL with embedded credentials. A base path is preserved, so
@@ -93,6 +94,27 @@ and a URL with embedded credentials. A base path is preserved, so
 Authentication is sent only when `username` or `password` is supplied. A
 missing counterpart is treated as an empty string, matching CnosDB's common
 `root` with an empty password setup.
+
+## Custom headers
+
+Deployments behind a gateway or proxy often need an extra header. Supply
+`headers` on the client for every request, and on any single call to add to or
+override them for that request only.
+
+```ts
+const client = new CnosDBClient({
+  url: "https://cnosdb.internal",
+  headers: { "x-api-key": process.env.GATEWAY_KEY! },
+});
+
+await client.query("SELECT 1", { headers: { "x-request-id": requestId } });
+```
+
+Header names are case-insensitive and are matched in lowercase. The client owns
+`authorization`, `content-type`, and `accept`: supplying any of them raises a
+`TypeError` rather than being ignored, so a misunderstanding surfaces at the
+call site instead of producing a request that quietly behaves differently. A
+value containing a line break is rejected for the same reason.
 
 ## Health check
 
