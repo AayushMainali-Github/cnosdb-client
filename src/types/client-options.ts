@@ -1,4 +1,4 @@
-import type { FetchLike, TimePrecision } from "./common.js";
+import type { Compression, FetchLike, TimePrecision } from "./common.js";
 
 /**
  * Construction options for {@link CnosDBClient}.
@@ -43,6 +43,15 @@ export interface CnosDBClientOptions {
    * `Date` resolution.
    */
   readonly precision?: TimePrecision;
+
+  /**
+   * Default compression for write payloads. Defaults to `"none"`.
+   *
+   * `"gzip"` typically shrinks Line Protocol by an order of magnitude, which
+   * is worthwhile for sizeable batches. It is opt-in because it changes the
+   * request shape and depends on server support.
+   */
+  readonly compression?: Compression;
 
   /**
    * Extra headers sent with every request, for gateways or proxies that

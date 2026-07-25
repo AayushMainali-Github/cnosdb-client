@@ -8,6 +8,7 @@
 export const RESERVED_HEADERS: readonly string[] = [
   "authorization",
   "content-type",
+  "content-encoding",
   "accept",
 ];
 
@@ -63,7 +64,8 @@ export function normalizeHeaders(
     if (RESERVED_HEADERS.includes(name)) {
       throw new TypeError(
         `\`${source}\` must not set "${name}", which the client controls. ` +
-          `Use the \`username\` and \`password\` options for authentication.`,
+          `Use the \`username\` and \`password\` options for authentication, ` +
+          `and the \`compression\` option for content encoding.`,
       );
     }
 

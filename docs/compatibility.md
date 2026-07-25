@@ -54,6 +54,8 @@ Observed on CnosDB 2.4.3 and encoded in the tests:
 - `POST /api/v1/write` accepts `precision` values `ms`, `us`, and `ns`, and returns HTTP 200 with an empty body.
 - Writing with `precision=ms` and a millisecond timestamp round-trips to the expected wall-clock time.
 - Line Protocol escaping round-trips: a string field containing `"`, `,`, and `\` is returned unchanged by a subsequent query.
+- `Content-Encoding: gzip` is honoured on `POST /api/v1/write`, and the decompressed points are stored correctly. The SQL endpoint accepts it too, though the client does not use it there.
+- Encoding mismatches fail loudly rather than corrupting data: gzip bytes sent without the header return 422 `040015` (`Invalid utf-8 sequence`), and plain text sent with the header returns 400 `040013` (`invalid gzip header`). A `Content-Encoding` other than `gzip` is also rejected with `040013`.
 
 ## Authentication
 

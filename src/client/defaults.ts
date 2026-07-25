@@ -1,12 +1,16 @@
-import type { TimePrecision } from "../types/index.js";
+import type { Compression, TimePrecision } from "../types/index.js";
 
 export const DEFAULT_DATABASE = "public";
 export const DEFAULT_TENANT = "cnosdb";
 export const DEFAULT_TIMEOUT_MS = 10_000;
 export const DEFAULT_PRECISION: TimePrecision = "ms";
+export const DEFAULT_COMPRESSION: Compression = "none";
 
 /** Accepted write precisions, in the order used by error messages. */
 export const PRECISIONS: readonly TimePrecision[] = ["ms", "us", "ns"];
+
+/** Accepted compression modes, in the order used by error messages. */
+export const COMPRESSIONS: readonly Compression[] = ["none", "gzip"];
 
 /**
  * Endpoint paths, relative to the configured base URL so that a base path is

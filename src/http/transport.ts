@@ -5,8 +5,9 @@ import {
   CnosDBTimeoutError,
   createErrorForStatus,
 } from "../errors/index.js";
-import type { FetchLike } from "../types/index.js";
+import type { Compression, FetchLike } from "../types/index.js";
 import { readBodySafely, truncate } from "./body.js";
+import { gzipBody } from "./compress.js";
 import { isAbortError, isCnosDBError, validateTimeout } from "./guards.js";
 
 /** @internal */
@@ -32,6 +33,8 @@ export interface TransportRequest {
   readonly timeoutMs?: number;
   /** Already normalized by {@link normalizeHeaders}. */
   readonly headers?: Readonly<Record<string, string>>;
+  /** Compression for this request's body. Defaults to `"none"`. */
+  readonly compression?: Compression;
 }
 
 /**
@@ -82,6 +85,12 @@ export class Transport {
       headers["content-type"] = request.contentType;
     }
 
+    let body: string | Uint8Array<ArrayBuffer> | undefined = request.body;
+    if (body !== undefined && request.compression === "gzip") {
+      body = await gzipBody(body);
+      headers["content-encoding"] = "gzip";
+    }
+
     const timeoutMs = request.timeoutMs ?? this.#timeoutMs;
     validateTimeout(timeoutMs);
 
@@ -126,7 +135,7 @@ export class Transport {
       const response = await this.#fetch(url, {
         method: request.method,
         headers,
-        ...(request.body === undefined ? {} : { body: request.body }),
+        ...(body === undefined ? {} : { body }),
         signal: controller.signal,
       });
 

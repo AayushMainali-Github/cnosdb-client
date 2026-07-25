@@ -216,6 +216,57 @@ describe("writes and queries", () => {
     expect(rows[0]!.stringValue).toBe('quoted "value", with comma\\slash');
   });
 
+  it("writes a gzip-compressed batch that the server decompresses", async () => {
+    // The dangerous failure would be the server storing the compressed bytes
+    // as if they were Line Protocol, so this asserts the values survive rather
+    // than merely that the request succeeded.
+    const base = Date.now();
+    await client.writePoints(
+      [
+        {
+          measurement,
+          tags: { city: "Bhaktapur" },
+          fields: { temperature: 18.5, humidity: 55 },
+          timestamp: base,
+        },
+        {
+          measurement,
+          tags: { city: "Bhaktapur" },
+          fields: { temperature: 19.5, humidity: 56 },
+          timestamp: base + 1,
+        },
+      ],
+      { database, precision: "ms", compression: "gzip" },
+    );
+
+    const rows = await client.query<{ temperature: number }[]>(
+      `SELECT temperature FROM ${measurement} ` +
+        `WHERE city = 'Bhaktapur' ORDER BY time`,
+      { database },
+    );
+    const temperatures = rows.map((row) => row.temperature);
+    expect(temperatures).toContain(18.5);
+    expect(temperatures).toContain(19.5);
+  });
+
+  it("round-trips escaping through a compressed write", async () => {
+    await client.writePoints(
+      {
+        measurement: "gzip_escaping",
+        tags: { kind: "all" },
+        fields: { stringValue: 'quoted "value", with comma\\slash' },
+        timestamp: new Date(),
+      },
+      { database, precision: "ms", compression: "gzip" },
+    );
+
+    const rows = await client.query<{ stringValue: string }[]>(
+      "SELECT * FROM gzip_escaping",
+      { database },
+    );
+    expect(rows[0]!.stringValue).toBe('quoted "value", with comma\\slash');
+  });
+
   it("returns an empty result set rather than throwing", async () => {
     // CnosDB returns an empty body rather than "[]" when nothing matches,
     // which the client surfaces as undefined.

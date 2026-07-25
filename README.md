@@ -74,17 +74,18 @@ console.log(rows);
 
 ## Configuration
 
-| Option      | Type                    | Default    | Description                            |
-| ----------- | ----------------------- | ---------- | -------------------------------------- |
-| `url`       | `string`                | _required_ | Absolute `http:` or `https:` base URL. |
-| `username`  | `string`                | —          | Basic-auth username.                   |
-| `password`  | `string`                | —          | Basic-auth password; may be empty.     |
-| `database`  | `string`                | `"public"` | Default database.                      |
-| `tenant`    | `string`                | `"cnosdb"` | Default tenant.                        |
-| `timeoutMs` | `number`                | `10000`    | Default request timeout.               |
-| `precision` | `"ms" \| "us" \| "ns"`  | `"ms"`     | Default write precision.               |
-| `headers`   | `Record<string,string>` | —          | Extra headers sent with every request. |
-| `fetch`     | `FetchLike`             | global     | Injectable fetch, mainly for tests.    |
+| Option        | Type                    | Default    | Description                            |
+| ------------- | ----------------------- | ---------- | -------------------------------------- |
+| `url`         | `string`                | _required_ | Absolute `http:` or `https:` base URL. |
+| `username`    | `string`                | —          | Basic-auth username.                   |
+| `password`    | `string`                | —          | Basic-auth password; may be empty.     |
+| `database`    | `string`                | `"public"` | Default database.                      |
+| `tenant`      | `string`                | `"cnosdb"` | Default tenant.                        |
+| `timeoutMs`   | `number`                | `10000`    | Default request timeout.               |
+| `precision`   | `"ms" \| "us" \| "ns"`  | `"ms"`     | Default write precision.               |
+| `compression` | `"none" \| "gzip"`      | `"none"`   | Compression for write payloads.        |
+| `headers`     | `Record<string,string>` | —          | Extra headers sent with every request. |
+| `fetch`       | `FetchLike`             | global     | Injectable fetch, mainly for tests.    |
 
 The constructor rejects a relative URL, a non-HTTP protocol, a URL fragment,
 and a URL with embedded credentials. A base path is preserved, so
@@ -94,6 +95,27 @@ and a URL with embedded credentials. A base path is preserved, so
 Authentication is sent only when `username` or `password` is supplied. A
 missing counterpart is treated as an empty string, matching CnosDB's common
 `root` with an empty password setup.
+
+## Compressing writes
+
+Line Protocol compresses extremely well, so gzip is worth enabling for sizeable
+batches on metered, slow, or cross-region links. It is opt-in, because it
+changes the request shape and depends on server support.
+
+```ts
+const client = new CnosDBClient({ url, compression: "gzip" });
+
+await client.writePoints(largeBatch);
+await client.writePoints(tinyBatch, { compression: "none" });
+```
+
+Only write payloads are compressed. SQL statements are left alone because they
+are small enough that gzip's overhead usually makes them bigger.
+
+Compression is all-or-nothing rather than applied above some size threshold, so
+what goes on the wire is always predictable from the option you set. A wrong
+guess is cheap: CnosDB rejects a malformed encoding with a clear error rather
+than storing anything, so a mismatch fails loudly instead of corrupting data.
 
 ## Custom headers
 

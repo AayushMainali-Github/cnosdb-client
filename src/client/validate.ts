@@ -1,5 +1,5 @@
-import type { TimePrecision } from "../types/index.js";
-import { PRECISIONS } from "./defaults.js";
+import type { Compression, TimePrecision } from "../types/index.js";
+import { COMPRESSIONS, PRECISIONS } from "./defaults.js";
 
 /**
  * Argument checks for the public methods. These run at runtime as well as in
@@ -37,6 +37,17 @@ export function assertPrecision(
     throw new TypeError(
       `\`precision\` must be one of ${PRECISIONS.join(", ")}; ` +
         `received ${String(precision)}.`,
+    );
+  }
+}
+
+export function assertCompression(
+  compression: unknown,
+): asserts compression is Compression {
+  if (!COMPRESSIONS.includes(compression as Compression)) {
+    throw new TypeError(
+      `\`compression\` must be one of ${COMPRESSIONS.join(", ")}; ` +
+        `received ${String(compression)}.`,
     );
   }
 }
