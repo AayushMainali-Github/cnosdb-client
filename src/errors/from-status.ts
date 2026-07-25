@@ -1,4 +1,5 @@
 import { CnosDBError, type CnosDBErrorOptions } from "./base.js";
+import { AUTH_FAILED_CODE, parseErrorCode } from "./error-code.js";
 import {
   CnosDBAuthenticationError,
   CnosDBRateLimitError,
@@ -7,7 +8,11 @@ import {
 } from "./http-status.js";
 
 /**
- * Maps an unsuccessful HTTP status onto the matching error class.
+ * Maps an unsuccessful response onto the matching error class.
+ *
+ * The status alone is not enough. CnosDB answers a rejected password with 422,
+ * the same status it uses for a missing table, so its `error_code` decides the
+ * class whenever the body carries one.
  *
  * @internal
  */
@@ -15,15 +20,23 @@ export function createErrorForStatus(
   status: number,
   options: CnosDBErrorOptions,
 ): CnosDBError {
-  const context = { ...options, status };
+  const errorCode = options.errorCode ?? parseErrorCode(options.responseBody);
+  const context = {
+    ...options,
+    status,
+    ...(errorCode === undefined ? {} : { errorCode }),
+  };
   const summary = summarize(options.responseBody);
   const where =
     options.method && options.path ? `${options.method} ${options.path}` : "";
   const suffix = summary ? `: ${summary}` : "";
 
-  if (status === 401) {
+  // 401 is kept for proxies and future servers that use it; CnosDB itself
+  // signals rejected credentials with this error code instead.
+  if (status === 401 || errorCode === AUTH_FAILED_CODE) {
     return new CnosDBAuthenticationError(
-      `CnosDB rejected the credentials for ${where} (HTTP 401)${suffix}`,
+      `CnosDB rejected the credentials for ${where} ` +
+        `(HTTP ${status})${suffix}`,
       context,
     );
   }
