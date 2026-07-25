@@ -8,6 +8,7 @@ import {
 import { serializePoints } from "../line-protocol/index.js";
 import type {
   CnosDBClientOptions,
+  Compression,
   Point,
   PingResult,
   QueryOptions,
@@ -17,6 +18,7 @@ import type {
 } from "../types/index.js";
 import { requestControls } from "./controls.js";
 import {
+  DEFAULT_COMPRESSION,
   DEFAULT_DATABASE,
   DEFAULT_PRECISION,
   DEFAULT_TENANT,
@@ -26,6 +28,7 @@ import {
   WRITE_PATH,
 } from "./defaults.js";
 import {
+  assertCompression,
   assertNonEmpty,
   assertOptionalString,
   assertPrecision,
@@ -54,6 +57,7 @@ export class CnosDBClient {
   readonly #database: string;
   readonly #tenant: string;
   readonly #precision: TimePrecision;
+  readonly #compression: Compression;
 
   constructor(options: CnosDBClientOptions) {
     // Runtime guards throughout the constructor protect JavaScript callers,
@@ -68,10 +72,12 @@ export class CnosDBClient {
     const tenant = options.tenant ?? DEFAULT_TENANT;
     const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
     const precision = options.precision ?? DEFAULT_PRECISION;
+    const compression = options.compression ?? DEFAULT_COMPRESSION;
 
     assertNonEmpty("database", database);
     assertNonEmpty("tenant", tenant);
     assertPrecision(precision);
+    assertCompression(compression);
 
     if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) {
       throw new TypeError(
@@ -94,6 +100,7 @@ export class CnosDBClient {
     this.#database = database;
     this.#tenant = tenant;
     this.#precision = precision;
+    this.#compression = compression;
     this.#transport = new Transport({
       baseUrl,
       authorization: createAuthorizationHeader(
@@ -231,6 +238,7 @@ export class CnosDBClient {
       body: payload,
       contentType: "text/plain; charset=utf-8",
       accept: "application/json",
+      compression: this.#resolveCompression(options),
       ...requestControls(options),
     });
   }
@@ -239,6 +247,12 @@ export class CnosDBClient {
     const precision = options.precision ?? this.#precision;
     assertPrecision(precision);
     return precision;
+  }
+
+  #resolveCompression(options: WriteOptions): Compression {
+    const compression = options.compression ?? this.#compression;
+    assertCompression(compression);
+    return compression;
   }
 
   #sqlParams(options: QueryOptions): Record<string, string> {

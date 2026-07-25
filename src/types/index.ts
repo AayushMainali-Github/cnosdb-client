@@ -1,4 +1,4 @@
-export type { FetchLike, TimePrecision } from "./common.js";
+export type { Compression, FetchLike, TimePrecision } from "./common.js";
 export type { CnosDBClientOptions } from "./client-options.js";
 export type {
   QueryOptions,

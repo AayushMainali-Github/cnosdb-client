@@ -1,4 +1,4 @@
-import type { TimePrecision } from "./common.js";
+import type { Compression, TimePrecision } from "./common.js";
 
 /**
  * Cancellation and timeout controls accepted by every request method.
@@ -36,4 +36,9 @@ export interface QueryOptions extends RequestOptions {
  */
 export interface WriteOptions extends QueryOptions {
   readonly precision?: TimePrecision;
+
+  /**
+   * Overrides the client-level compression for this write only.
+   */
+  readonly compression?: Compression;
 }
