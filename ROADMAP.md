@@ -22,10 +22,10 @@ Small, compatible improvements to what already exists:
 
 Larger additions that each need a design issue first:
 
-- **Chunked and streaming query support.** Read large result sets without holding the whole response in memory. Needs a safe, bounded design before implementation.
-- **Opt-in retry policy.** Explicitly configured, never on by default, and never applied to non-idempotent writes without the caller asking. See [ADR-0006](docs/adr/0006-disable-automatic-retries-in-v0.1.0.md).
-- **Controlled batch splitting.** An explicit helper for oversized write batches, so the caller chooses the behaviour rather than the client guessing.
-- **Richer query result helpers.** Convenience for column metadata and typed row mapping, without becoming an ORM.
+- ~~**Chunked and streaming query support.**~~ Shipped as `queryStream()`; see [docs/compatibility.md](docs/compatibility.md) for the `chunked=true` framing.
+- ~~**Opt-in retry policy.**~~ Shipped; off by default, writes only with `retryWrites`. See [ADR-0009](docs/adr/0009-opt-in-retry-policy.md).
+- ~~**Controlled batch splitting.**~~ Shipped as `splitPoints()`.
+- ~~**Richer query result helpers.**~~ Shipped as `queryTable()` for column metadata; typed row mapping stays a caller concern.
 
 ## Later exploration
 

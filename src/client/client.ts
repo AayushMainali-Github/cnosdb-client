@@ -8,6 +8,7 @@ import {
 } from "../http/index.js";
 import { serializePoints } from "../line-protocol/index.js";
 import { parseCsv } from "../csv/index.js";
+import { iterateJsonArrayStream } from "../json/index.js";
 import type {
   CnosDBClientOptions,
   Compression,
@@ -222,6 +223,64 @@ export class CnosDBClient {
   }
 
   /**
+   * Executes a SQL statement and yields each row as it arrives.
+   *
+   * Unlike {@link CnosDBClient.query}, this does not buffer the whole result.
+   * It asks CnosDB for a chunked response (`chunked=true`), which arrives as
+   * successive JSON arrays; each array is parsed and its rows are yielded so
+   * memory stays proportional to one server batch rather than the full set.
+   *
+   * Row shape matches {@link CnosDBClient.query}: JSON objects with keys
+   * sorted alphabetically and NULL columns omitted. Prefer
+   * {@link CnosDBClient.queryTable} when column order or NULL presence
+   * matters and the result fits in memory.
+   *
+   * If the stream fails after some rows have already been yielded, the
+   * iterator throws and those rows stay consumed — the caller is looking at
+   * a partial result. SQL errors still arrive as an HTTP error before any
+   * row is sent, with the same typed errors as the buffered path.
+   *
+   * Breaking out of the loop, or aborting `options.signal`, cancels the
+   * underlying response so the connection is not left half-read.
+   *
+   * Retried like {@link CnosDBClient.query} when a retry policy is configured,
+   * but only for failures before the response body starts. A failure mid-stream
+   * cannot be retried without re-running the whole statement.
+   */
+  async *queryStream<T = unknown>(
+    statement: string,
+    options: QueryOptions = {},
+  ): AsyncGenerator<T, void, undefined> {
+    const sql = requireStatement(statement);
+    const response = await this.#transport.request({
+      method: "POST",
+      path: SQL_PATH,
+      searchParams: this.#sqlParams(options, true),
+      body: sql,
+      contentType: "text/plain; charset=utf-8",
+      accept: "application/json",
+      retryable: true,
+      ...requestControls(options),
+    });
+
+    const body = response.body;
+    if (body === null) {
+      throw new CnosDBResponseError(
+        "CnosDB returned a chunked response with no body.",
+        { method: "POST", path: `/${SQL_PATH}`, status: response.status },
+      );
+    }
+
+    for await (const row of iterateJsonArrayStream(
+      body,
+      { method: "POST", path: `/${SQL_PATH}` },
+      options.signal,
+    )) {
+      yield row as T;
+    }
+  }
+
+  /**
    * Executes a SQL statement whose result rows are not needed, such as DDL.
    * Any 2xx response counts as success and the body is discarded.
    *
@@ -311,11 +370,11 @@ export class CnosDBClient {
     return compression;
   }
 
-  #sqlParams(options: QueryOptions): Record<string, string> {
+  #sqlParams(options: QueryOptions, chunked = false): Record<string, string> {
     return {
       db: options.database ?? this.#database,
       tenant: options.tenant ?? this.#tenant,
-      chunked: "false",
+      chunked: chunked ? "true" : "false",
     };
   }
 }

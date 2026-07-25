@@ -305,6 +305,57 @@ describe("splitPoints", () => {
   });
 });
 
+describe("queryStream", () => {
+  it("yields every row from a result large enough to span batches", async () => {
+    const base = Date.now();
+    const points = Array.from({ length: 1_200 }, (_unused, index) => ({
+      measurement: "stream_batch",
+      tags: { city: `c${String(index % 20)}` },
+      fields: { v: index },
+      timestamp: base + index,
+    }));
+    await client.writePoints(points, { database, precision: "ms" });
+
+    const values: number[] = [];
+    for await (const row of client.queryStream<{ v: number }>(
+      "SELECT v FROM stream_batch",
+      { database },
+    )) {
+      values.push(row.v);
+    }
+
+    expect(values).toHaveLength(1_200);
+    expect(new Set(values).size).toBe(1_200);
+  });
+
+  it("yields nothing for an empty result", async () => {
+    const rows: unknown[] = [];
+    for await (const row of client.queryStream(
+      "SELECT * FROM stream_batch WHERE v < 0",
+      { database },
+    )) {
+      rows.push(row);
+    }
+    expect(rows).toStrictEqual([]);
+  });
+
+  it("rejects a bad statement before yielding any row", async () => {
+    const seen: unknown[] = [];
+    const error = await captureError(
+      (async () => {
+        for await (const row of client.queryStream(
+          "SELECT * FROM definitely_missing",
+          { database },
+        )) {
+          seen.push(row);
+        }
+      })(),
+    );
+    expect(error).toBeInstanceOf(CnosDBRequestError);
+    expect(seen).toStrictEqual([]);
+  });
+});
+
 describe("retries", () => {
   /**
    * Wraps the real fetch so the first `failures` calls fail the way a dropped
