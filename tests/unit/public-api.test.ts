@@ -4,11 +4,13 @@ import * as publicApi from "../../src/index.js";
 import type {
   CnosDBClientOptions,
   CnosDBErrorOptions,
+  Compression,
   FetchLike,
   PingResult,
   Point,
   PointFieldValue,
   QueryOptions,
+  QueryTable,
   RequestOptions,
   TimePrecision,
   WriteOptions,
@@ -70,15 +72,23 @@ describe("public API surface", () => {
     // Compilation is the assertion: each alias fails typecheck if a type stops
     // being exported or changes shape incompatibly.
     const precision: TimePrecision = "ms";
+    const compression: Compression = "gzip";
     const fetchLike: FetchLike = () => Promise.resolve(new Response());
     const clientOptions: CnosDBClientOptions = {
       url: "http://localhost:8902",
       precision,
+      compression,
+      headers: { "x-api-key": "k" },
       fetch: fetchLike,
     };
     const requestOptions: RequestOptions = { timeoutMs: 1_000 };
     const queryOptions: QueryOptions = { ...requestOptions, database: "db" };
-    const writeOptions: WriteOptions = { ...queryOptions, precision };
+    const writeOptions: WriteOptions = {
+      ...queryOptions,
+      precision,
+      compression,
+    };
+    const table: QueryTable = { columns: ["a"], rows: [["1"]] };
     const fieldValue: PointFieldValue = 1;
     const point: Point = {
       measurement: "m",
@@ -89,6 +99,7 @@ describe("public API surface", () => {
 
     expect(clientOptions.url).toBe("http://localhost:8902");
     expect(writeOptions.precision).toBe("ms");
+    expect(table.columns).toEqual(["a"]);
     expect(point.measurement).toBe("m");
     expect(ping.status).toBe("healthy");
     expect(errorOptions.cause).toBeInstanceOf(Error);

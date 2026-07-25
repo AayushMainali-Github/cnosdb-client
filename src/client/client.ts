@@ -6,12 +6,14 @@ import {
   Transport,
 } from "../http/index.js";
 import { serializePoints } from "../line-protocol/index.js";
+import { parseCsv } from "../csv/index.js";
 import type {
   CnosDBClientOptions,
   Compression,
   Point,
   PingResult,
   QueryOptions,
+  QueryTable,
   RequestOptions,
   TimePrecision,
   WriteOptions,
@@ -169,6 +171,40 @@ export class CnosDBClient {
       ...requestControls(options),
     });
     return result as T;
+  }
+
+  /**
+   * Executes a SQL statement and returns its columns alongside raw row values.
+   *
+   * Use this when the columns matter: rendering a table, exporting data, or
+   * running a statement whose shape is not known in advance. It asks CnosDB
+   * for CSV, which is the only response format that carries the column names
+   * and their order; the JSON format sorts keys alphabetically and omits any
+   * column that is NULL for a given row.
+   *
+   * Values are returned as raw strings, because CnosDB sends no column types
+   * over HTTP. See {@link QueryTable} for what that implies.
+   */
+  async queryTable(
+    statement: string,
+    options: QueryOptions = {},
+  ): Promise<QueryTable> {
+    const sql = requireStatement(statement);
+    const body = await this.#transport.requestText({
+      method: "POST",
+      path: SQL_PATH,
+      searchParams: this.#sqlParams(options),
+      body: sql,
+      contentType: "text/plain; charset=utf-8",
+      accept: "application/csv",
+      ...requestControls(options),
+    });
+
+    const parsed = parseCsv(body);
+    // A statement with no result set at all, such as DDL, returns an empty
+    // body rather than a header row.
+    const [columns, ...rows] = parsed;
+    return { columns: columns ?? [], rows };
   }
 
   /**
