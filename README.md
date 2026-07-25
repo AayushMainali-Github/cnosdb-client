@@ -274,21 +274,32 @@ try {
 }
 ```
 
-| Condition                  | Error                       |
-| -------------------------- | --------------------------- |
-| HTTP 401                   | `CnosDBAuthenticationError` |
-| HTTP 429                   | `CnosDBRateLimitError`      |
-| Other HTTP 4xx (incl. 413) | `CnosDBRequestError`        |
-| HTTP 5xx                   | `CnosDBServerError`         |
-| Client timeout             | `CnosDBTimeoutError`        |
-| Connection failure         | `CnosDBNetworkError`        |
-| Unreadable payload         | `CnosDBResponseError`       |
-| Anything else              | `CnosDBError`               |
+| Condition                       | Error                       |
+| ------------------------------- | --------------------------- |
+| Rejected credentials            | `CnosDBAuthenticationError` |
+| HTTP 429                        | `CnosDBRateLimitError`      |
+| Other HTTP 4xx (incl. 413, 422) | `CnosDBRequestError`        |
+| HTTP 5xx                        | `CnosDBServerError`         |
+| Client timeout                  | `CnosDBTimeoutError`        |
+| Connection failure              | `CnosDBNetworkError`        |
+| Unreadable payload              | `CnosDBResponseError`       |
+| Anything else                   | `CnosDBError`               |
 
-Every error extends `CnosDBError` and carries `status`, `method`, `path`, and a
-truncated `responseBody` where available, plus the original `cause`. Errors
-never contain the password, the `Authorization` header, or a credential-bearing
-URL.
+Every error extends `CnosDBError` and carries `status`, `method`, `path`, a
+truncated `responseBody`, and CnosDB's own `errorCode` where available, plus the
+original `cause`. Errors never contain the password, the `Authorization` header,
+or a credential-bearing URL.
+
+CnosDB does not use HTTP 401. It answers rejected credentials with 422, the same
+status it uses for a missing table, and distinguishes the two only through the
+`error_code` in the body. The client therefore classifies on that code, which is
+why `CnosDBAuthenticationError` can carry a status of 422. HTTP 401 is still
+mapped, for proxies that use it.
+
+`errorCode` is passed through verbatim so you can act on cases the client does
+not model, such as `010004` for a user who authenticated but lacks the required
+privilege. See [docs/compatibility.md](docs/compatibility.md) for the observed
+codes.
 
 ## API reference
 

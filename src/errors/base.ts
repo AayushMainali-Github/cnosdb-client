@@ -13,6 +13,12 @@ export interface CnosDBErrorOptions {
   readonly path?: string;
   /** Response body, truncated to a safe maximum. */
   readonly responseBody?: string;
+  /**
+   * CnosDB's own `error_code` from the response envelope, when the body
+   * contained one. CnosDB reuses HTTP 422 for most application failures, so
+   * this is the field that distinguishes them.
+   */
+  readonly errorCode?: string;
   /** Underlying cause, preserved for debugging. */
   readonly cause?: unknown;
 }
@@ -26,6 +32,7 @@ export class CnosDBError extends Error {
   readonly method?: string;
   readonly path?: string;
   readonly responseBody?: string;
+  readonly errorCode?: string;
 
   constructor(message: string, options: CnosDBErrorOptions = {}) {
     super(message, "cause" in options ? { cause: options.cause } : undefined);
@@ -36,6 +43,7 @@ export class CnosDBError extends Error {
     if (options.responseBody !== undefined) {
       this.responseBody = options.responseBody;
     }
+    if (options.errorCode !== undefined) this.errorCode = options.errorCode;
     Object.setPrototypeOf(this, new.target.prototype);
   }
 }
