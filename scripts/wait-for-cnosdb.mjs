@@ -13,6 +13,23 @@ const intervalMs = 1_000;
 const deadline = Date.now() + timeoutMs;
 let lastError = "no attempt completed";
 
+/**
+ * Node exits with code 13 when the event loop drains while a top-level `await`
+ * is pending. Before the server accepts connections, an attempt can leave
+ * nothing else queued, so the process would abandon the retry loop on the very
+ * first failure — and the per-attempt abort timer could never fire either.
+ * A referenced interval keeps the loop alive until polling is finished.
+ */
+const keepAlive = setInterval(() => {}, intervalMs);
+
+const finish = (code, message) => {
+  clearInterval(keepAlive);
+  if (message !== undefined) {
+    (code === 0 ? console.log : console.error)(message);
+  }
+  process.exit(code);
+};
+
 while (Date.now() < deadline) {
   try {
     const response = await fetch(new URL("api/v1/ping", `${url}/`), {
@@ -20,10 +37,10 @@ while (Date.now() < deadline) {
     });
     if (response.ok) {
       const body = await response.json();
-      console.log(
+      finish(
+        0,
         `CnosDB is ready: status=${body.status} version=${body.version}`,
       );
-      process.exit(0);
     }
     lastError = `HTTP ${response.status}`;
   } catch (error) {
@@ -32,8 +49,8 @@ while (Date.now() < deadline) {
   await new Promise((resolve) => setTimeout(resolve, intervalMs));
 }
 
-console.error(
+finish(
+  1,
   `CnosDB did not become ready at ${url} within ${timeoutMs} ms. ` +
     `Last error: ${lastError}`,
 );
-process.exit(1);
