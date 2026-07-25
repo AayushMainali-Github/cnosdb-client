@@ -12,6 +12,7 @@ import type {
   QueryOptions,
   QueryTable,
   RequestOptions,
+  SplitOptions,
   TimePrecision,
   WriteOptions,
 } from "../../src/index.js";
@@ -32,6 +33,7 @@ const EXPECTED_RUNTIME_EXPORTS = [
   "CnosDBServerError",
   "CnosDBTimeoutError",
   "serializePoint",
+  "splitPoints",
 ] as const;
 
 describe("public API surface", () => {
@@ -41,9 +43,10 @@ describe("public API surface", () => {
     ]);
   });
 
-  it("exports the client as a constructor and the serializer as a function", () => {
+  it("exports the client as a constructor and the helpers as functions", () => {
     expect(typeof publicApi.CnosDBClient).toBe("function");
     expect(typeof publicApi.serializePoint).toBe("function");
+    expect(typeof publicApi.splitPoints).toBe("function");
   });
 
   it("preserves the error hierarchy", () => {
@@ -89,6 +92,7 @@ describe("public API surface", () => {
       compression,
     };
     const table: QueryTable = { columns: ["a"], rows: [["1"]] };
+    const splitOptions: SplitOptions = { maxBytes: 1_000, precision };
     const fieldValue: PointFieldValue = 1;
     const point: Point = {
       measurement: "m",
@@ -100,6 +104,7 @@ describe("public API surface", () => {
     expect(clientOptions.url).toBe("http://localhost:8902");
     expect(writeOptions.precision).toBe("ms");
     expect(table.columns).toEqual(["a"]);
+    expect(splitOptions.maxBytes).toBe(1_000);
     expect(point.measurement).toBe("m");
     expect(ping.status).toBe("healthy");
     expect(errorOptions.cause).toBeInstanceOf(Error);
