@@ -13,11 +13,13 @@ export {
 export type { CnosDBErrorOptions } from "./errors/index.js";
 export type {
   CnosDBClientOptions,
+  Compression,
   FetchLike,
   PingResult,
   Point,
   PointFieldValue,
   QueryOptions,
+  QueryTable,
   RequestOptions,
   TimePrecision,
   WriteOptions,

@@ -190,6 +190,12 @@ export class Transport {
     }
   }
 
+  /** Performs a request and returns the response body as text. */
+  async requestText(request: TransportRequest): Promise<string> {
+    const response = await this.request(request);
+    return this.#readSuccessBody(response, request);
+  }
+
   /**
    * Performs a request and discards the response body, ensuring the
    * underlying connection is not left half-read.

@@ -169,6 +169,40 @@ The statement is sent verbatim. The client does not rewrite, interpolate, or
 retry it. Statements that return no rows (such as DDL) resolve to `undefined`;
 use `execute()` for those.
 
+## Querying with column metadata
+
+`query()` returns JSON objects, which is convenient but loses two things: CnosDB
+sorts the keys alphabetically rather than by the order you selected, and it
+**omits any column that is NULL for that row**, so row objects can differ in
+shape from one row to the next.
+
+`queryTable()` asks for CSV instead, the only format that carries column names
+and their order:
+
+```ts
+const { columns, rows } = await client.queryTable(
+  "SELECT v, city FROM weather",
+);
+// columns: ["v", "city"]        — the order you asked for
+// rows:    [["1.5", "Pokhara"]] — always one value per column
+```
+
+Every row has exactly one value per column, so a NULL stays visible as an empty
+string rather than vanishing.
+
+On CnosDB 2.4.3 the columns are reported even when no rows match, so an empty
+result can still be rendered with its headings. Do not rely on that below 2.4.3:
+2.4.1 returns an empty body for an empty result, and `columns` is then also
+empty. `rows` is empty either way.
+
+Values are raw strings. CnosDB sends no column types over HTTP in any response
+format, so converting them would mean guessing, and a wrong guess on a large
+integer or a timestamp is worse than an honest string. Convert what you need at
+the call site.
+
+One ambiguity is unavoidable: CnosDB renders both NULL and an empty string as an
+empty field, so the two cannot be told apart in a `queryTable()` result.
+
 ## Executing SQL
 
 ```ts
@@ -330,6 +364,7 @@ new CnosDBClient(options: CnosDBClientOptions)
 
 client.ping(options?: RequestOptions): Promise<PingResult>
 client.query<T>(statement: string, options?: QueryOptions): Promise<T>
+client.queryTable(statement: string, options?: QueryOptions): Promise<QueryTable>
 client.execute(statement: string, options?: QueryOptions): Promise<void>
 client.writeLineProtocol(data: string, options?: WriteOptions): Promise<void>
 client.writePoints(points: Point | readonly Point[], options?: WriteOptions): Promise<void>

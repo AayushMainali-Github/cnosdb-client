@@ -278,6 +278,88 @@ describe("writes and queries", () => {
   });
 });
 
+describe("queryTable", () => {
+  const table = "table_shape";
+
+  it("returns columns in the order the statement asked for", async () => {
+    await client.writePoints(
+      {
+        measurement: table,
+        tags: { city: "Pokhara" },
+        fields: { v: 1.5, n: 7n },
+        timestamp: Date.now(),
+      },
+      { database, precision: "ms" },
+    );
+
+    const result = await client.queryTable(
+      `SELECT v, city FROM ${table} LIMIT 1`,
+      { database },
+    );
+
+    // The JSON endpoint sorts keys alphabetically and would report city first,
+    // which is why this method exists.
+    expect(result.columns).toEqual(["v", "city"]);
+    expect(result.rows[0]).toHaveLength(2);
+  });
+
+  it("returns no rows for an empty result set", async () => {
+    const result = await client.queryTable(
+      `SELECT v, city FROM ${table} WHERE city = 'nowhere-at-all'`,
+      { database },
+    );
+
+    expect(result.rows).toEqual([]);
+    // Whether the columns survive an empty result is version-dependent: 2.4.3
+    // sends the header row, 2.4.1 sends an empty body. Both are accepted here
+    // because the ping version cannot tell those releases apart — 2.4.1
+    // reports itself as 2.4.0.
+    expect([[], ["v", "city"]]).toContainEqual(result.columns);
+  });
+
+  it("keeps a NULL column aligned instead of dropping it", async () => {
+    // The same row read as JSON omits the null key entirely, so the object
+    // shape silently changes between rows.
+    await client.writePoints(
+      {
+        measurement: table,
+        tags: { city: "Lalitpur" },
+        fields: { v: 2.5 },
+        timestamp: Date.now(),
+      },
+      { database, precision: "ms" },
+    );
+
+    const result = await client.queryTable(
+      `SELECT city, v, n FROM ${table} WHERE city = 'Lalitpur'`,
+      { database },
+    );
+
+    expect(result.columns).toEqual(["city", "v", "n"]);
+    for (const row of result.rows) {
+      expect(row).toHaveLength(3);
+    }
+  });
+
+  it("decodes a value containing a comma and a quote", async () => {
+    await client.writePoints(
+      {
+        measurement: "table_escaping",
+        tags: { kind: "csv" },
+        fields: { s: 'a,b"c' },
+        timestamp: Date.now(),
+      },
+      { database, precision: "ms" },
+    );
+
+    const result = await client.queryTable("SELECT s FROM table_escaping", {
+      database,
+    });
+
+    expect(result.rows[0]).toEqual(['a,b"c']);
+  });
+});
+
 describe("cancellation", () => {
   it("rejects with an abort error when the caller cancels", async () => {
     const controller = new AbortController();

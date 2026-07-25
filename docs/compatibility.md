@@ -94,7 +94,10 @@ Authentication is HTTP Basic. SQL is sent as the request body with
 Observed on CnosDB 2.4.3 and encoded in the tests:
 
 - `GET /api/v1/ping` returns `{"version": "...", "status": "healthy"}` and needs no authentication.
-- A successful `SELECT` with `Accept: application/json` returns a JSON array of row objects.
+- A successful `SELECT` with `Accept: application/json` returns a JSON array of row objects, with two caveats worth knowing. Keys are sorted **alphabetically**, not in the order the statement selected them, so `SELECT v, city` returns `{"city": ..., "v": ...}`. A column that is NULL for a row is **omitted from that row's object** entirely, so row objects can differ in shape and a NULL cannot be distinguished from an absent column.
+- `Accept: application/csv` and `text/csv` return a header row followed by data rows. This is the only format that carries column names in their true order, and it emits every column for every row, so it is what `queryTable()` uses. On 2.4.3, an empty result set still returns the header row, whereas the JSON format returns a completely empty body. **This differs by version:** 2.4.1 returns an empty body for an empty CSV result too, so `queryTable()` reports no columns there. The ping string cannot be used to branch on this, since 2.4.1 identifies itself as 2.4.0. Fields are quoted per RFC 4180, with doubled quotes for a literal quote. Both NULL and an empty string render as an empty field and cannot be told apart.
+- `Accept: application/nd-json` returns newline-delimited JSON objects. `application/x-ndjson` is rejected with `040005`.
+- No response format carries column **types**.
 - DDL such as `CREATE DATABASE` returns HTTP 200 with an **empty body**. `query()` therefore resolves to `undefined` for such statements; use `execute()` instead.
 - Invalid SQL returns HTTP **422** with a JSON body such as `{"error_code":"030019","error_message":"Table not found: ..."}`. This maps to `CnosDBRequestError`.
 - CnosDB **never returns HTTP 401**. It reuses 422 for nearly every application failure and distinguishes them only by `error_code`, so the client classifies errors on that code rather than on the status. The 401 mapping is retained for proxies that do use it.
