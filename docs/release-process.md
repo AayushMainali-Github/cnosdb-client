@@ -173,3 +173,34 @@ That token manages the release pull request only. It is never used to publish to
 npm, and it must never appear in a file or a log. Publishing authenticates
 separately through npm trusted publishing over OIDC, so no npm credential is
 stored in this repository.
+
+### The token has to reach two places
+
+Setting the token only in the changesets step's `env` is not enough, and the
+failure it produces looks like the problem is unfixed.
+
+`actions/checkout` persists whatever token it is given as the git credential for
+the checked-out repository, defaulting to `GITHUB_TOKEN`. `changesets/action`
+pushes the release branch with plain git, so the push uses that persisted
+credential rather than anything in `env`. The `env` token is used only for the
+API calls that open and update the pull request.
+
+So the token is passed twice: to `actions/checkout` for the push, and to the
+changesets step for the API. Miss the checkout and the branch is pushed by
+`github-actions[bot]`, which lands the release PR's runs in `action_required`
+with a zero-second duration.
+
+### Diagnosing a stuck release PR
+
+If the release pull request shows no checks, or checks that never start:
+
+```bash
+gh pr checks <number>
+gh run list --branch changeset-release/main --limit 5
+gh api repos/<owner>/<repo>/actions/runs/<run-id> --jq '.actor.login, .conclusion'
+```
+
+An actor of `github-actions[bot]` with the conclusion `action_required` means the
+push was made with the wrong credential; check the `token:` on `actions/checkout`
+before looking anywhere else. Commit authorship is a red herring: it can be
+correct while the runs are still blocked, because GitHub keys on the pusher.
