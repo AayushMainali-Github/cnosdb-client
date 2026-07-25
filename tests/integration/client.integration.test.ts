@@ -5,6 +5,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { CnosDBClient } from "../../src/client/index.js";
 import { CnosDBRequestError } from "../../src/errors/index.js";
+import { splitPoints } from "../../src/line-protocol/index.js";
 import type { PingResult } from "../../src/types/index.js";
 import { captureError } from "../helpers.js";
 
@@ -275,6 +276,32 @@ describe("writes and queries", () => {
       { database },
     );
     expect(rows ?? []).toEqual([]);
+  });
+});
+
+describe("splitPoints", () => {
+  it("writes a batch in chunks that the server accepts", async () => {
+    const base = Date.now();
+    const points = Array.from({ length: 60 }, (_unused, index) => ({
+      measurement: "split_batch",
+      tags: { city: `city${String(index)}` },
+      fields: { v: index },
+      timestamp: base + index,
+    }));
+
+    let chunkCount = 0;
+    for (const chunk of splitPoints(points, { maxBytes: 400 })) {
+      expect(Buffer.byteLength(chunk, "utf8")).toBeLessThanOrEqual(400);
+      await client.writeLineProtocol(chunk, { database, precision: "ms" });
+      chunkCount += 1;
+    }
+    expect(chunkCount).toBeGreaterThan(1);
+
+    const rows = await client.query<{ total: number }[]>(
+      "SELECT COUNT(v) AS total FROM split_batch",
+      { database },
+    );
+    expect(rows[0]!.total).toBe(60);
   });
 });
 

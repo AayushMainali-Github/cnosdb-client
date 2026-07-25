@@ -248,6 +248,35 @@ await client.writePoints(
 Every point is serialized before any request is sent, so an invalid point
 rejects the whole call without writing a partial batch.
 
+## Splitting large batches
+
+`writePoints()` always sends one request, however many points you give it. For
+a batch large enough to hit a server limit, `splitPoints()` cuts it into
+payloads of a chosen size:
+
+```ts
+import { splitPoints } from "cnosdb-client";
+
+for (const chunk of splitPoints(points, { maxBytes: 1_000_000 })) {
+  await client.writeLineProtocol(chunk);
+}
+```
+
+Sizing is by encoded UTF-8 bytes, not point count, because points vary
+enormously in encoded length and server limits are measured in bytes. The
+newlines between lines are counted too, so a payload that fits here fits on the
+wire.
+
+There is no default size and nothing splits unless you ask, so existing writes
+behave exactly as before. A single point larger than `maxBytes` throws a
+`RangeError` naming its index and size, rather than emitting a payload that
+breaks the limit you asked for.
+
+The loop stays in your code on purpose. If the seventh chunk fails, the first
+six are already written, and only you can decide what that means for your data.
+Hiding the loop inside a write would turn one call into many requests and make
+partial success invisible.
+
 ## Point value and timestamp rules
 
 `serializePoint()` is a pure, deterministic function you can use directly:
@@ -370,6 +399,7 @@ client.writeLineProtocol(data: string, options?: WriteOptions): Promise<void>
 client.writePoints(points: Point | readonly Point[], options?: WriteOptions): Promise<void>
 
 serializePoint(point: Point, precision?: TimePrecision): string
+splitPoints(points: readonly Point[], options: SplitOptions): Generator<string>
 ```
 
 Exported types: `CnosDBClientOptions`, `RequestOptions`, `QueryOptions`,
