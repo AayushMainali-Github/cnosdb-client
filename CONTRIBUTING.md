@@ -77,9 +77,9 @@ There is no `develop` branch. `main` is always releasable.
 ## Where code goes
 
 `src/` is grouped into one folder per domain — `types/`, `errors/`,
-`line-protocol/`, `http/`, and `client/` — each with an `index.ts` barrel. Add
-code to the folder that owns the concern, and export it from that barrel only if
-another folder needs it.
+`line-protocol/`, `csv/`, `json/`, `http/`, and `client/` — each with an
+`index.ts` barrel. Add code to the folder that owns the concern, and export it
+from that barrel only if another folder needs it.
 
 Cross-folder imports go through the barrel, never into a sibling's internals:
 import from `../http/index.js`, not `../http/transport.js`. Files inside one

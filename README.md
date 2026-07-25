@@ -16,6 +16,7 @@ A small, dependency-free TypeScript client for the CnosDB HTTP API.
 - Typed errors for authentication, rate limiting, timeouts, network failures, and malformed responses.
 - Per-client and per-request timeouts, plus `AbortSignal` cancellation.
 - Opt-in retries with jittered backoff, off by default and never retrying a write unless you say so.
+- Streaming queries that yield rows as they arrive, so large results do not have to fit in memory.
 - Zero runtime dependencies; built on the platform `fetch`.
 - Ships ESM, CommonJS, and strict TypeScript declarations with source maps.
 - No import-time side effects, so unused exports tree-shake away.
@@ -170,6 +171,34 @@ Validate untrusted results yourself.
 The statement is sent verbatim. The client does not rewrite, interpolate, or
 retry it. Statements that return no rows (such as DDL) resolve to `undefined`;
 use `execute()` for those.
+
+## Streaming query results
+
+`query()` buffers the entire response before returning. For a result that would
+not fit comfortably in memory, `queryStream()` yields rows as they arrive:
+
+```ts
+for await (const row of client.queryStream<WeatherRow>(
+  "SELECT time, temperature FROM weather",
+)) {
+  process(row);
+}
+```
+
+It asks CnosDB for `chunked=true`. The server replies with successive JSON
+arrays written back to back (about 500 rows each on current builds); the client
+parses each array and yields its elements, so memory stays proportional to one
+batch rather than the whole result.
+
+Row shape matches `query()`: JSON objects with keys sorted alphabetically and
+NULL columns omitted. Prefer `queryTable()` when column order or NULL presence
+matters and the result fits in memory.
+
+If the stream fails after some rows have already been yielded, the iterator
+throws and those rows stay consumed — you are looking at a partial result. SQL
+errors still arrive as an HTTP error before any row is sent. Breaking out of
+the loop, or aborting `options.signal`, cancels the underlying response so the
+connection is not left half-read.
 
 ## Querying with column metadata
 
@@ -446,6 +475,7 @@ new CnosDBClient(options: CnosDBClientOptions)
 
 client.ping(options?: RequestOptions): Promise<PingResult>
 client.query<T>(statement: string, options?: QueryOptions): Promise<T>
+client.queryStream<T>(statement: string, options?: QueryOptions): AsyncGenerator<T>
 client.queryTable(statement: string, options?: QueryOptions): Promise<QueryTable>
 client.execute(statement: string, options?: QueryOptions): Promise<void>
 client.writeLineProtocol(data: string, options?: WriteOptions): Promise<void>

@@ -14,19 +14,23 @@ Source is grouped into five domain folders. Each owns one concern and exposes an
 | `src/types/`         | Public type definitions and TSDoc                           | Yes     |
 | `src/errors/`        | Error classes and status-to-error mapping                   | Yes     |
 | `src/line-protocol/` | Pure Line Protocol serialization                            | Partly  |
+| `src/csv/`           | RFC 4180 parser for column-aware query results              | No      |
+| `src/json/`          | Streaming decoder for chunked JSON query results            | No      |
 | `src/http/`          | Internal transport: URLs, auth, timeouts, response handling | No      |
-| `src/client/`        | `CnosDBClient`, thin orchestration over the two below       | Yes     |
+| `src/client/`        | `CnosDBClient`, thin orchestration over the layers below    | Yes     |
 | `src/index.ts`       | The package's entire public surface                         | Yes     |
 
 Within each folder:
 
-| Folder           | Files                                                          |
-| ---------------- | -------------------------------------------------------------- |
-| `types/`         | `common`, `client-options`, `request-options`, `point`, `ping` |
-| `errors/`        | `base`, `http-status`, `transport`, `response`, `from-status`  |
-| `line-protocol/` | `escape`, `field`, `timestamp`, `serialize`                    |
-| `http/`          | `url`, `auth`, `body`, `guards`, `retry`, `transport`          |
-| `client/`        | `defaults`, `validate`, `controls`, `client`                   |
+| Folder           | Files                                                                                  |
+| ---------------- | -------------------------------------------------------------------------------------- |
+| `types/`         | `common`, `client-options`, `request-options`, `point`, `ping`, `retry`, `query-table` |
+| `errors/`        | `base`, `http-status`, `transport`, `response`, `from-status`, `error-code`            |
+| `line-protocol/` | `escape`, `field`, `timestamp`, `serialize`, `split`                                   |
+| `csv/`           | `parse`                                                                                |
+| `json/`          | `stream`                                                                               |
+| `http/`          | `url`, `auth`, `body`, `guards`, `compress`, `headers`, `retry`, `transport`           |
+| `client/`        | `defaults`, `validate`, `controls`, `client`                                           |
 
 ### The barrel rule
 
