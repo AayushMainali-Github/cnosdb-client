@@ -15,6 +15,7 @@ A small, dependency-free TypeScript client for the CnosDB HTTP API.
 - Deterministic Line Protocol serialization from plain JavaScript objects.
 - Typed errors for authentication, rate limiting, timeouts, network failures, and malformed responses.
 - Per-client and per-request timeouts, plus `AbortSignal` cancellation.
+- Opt-in retries with jittered backoff, off by default and never retrying a write unless you say so.
 - Zero runtime dependencies; built on the platform `fetch`.
 - Ships ESM, CommonJS, and strict TypeScript declarations with source maps.
 - No import-time side effects, so unused exports tree-shake away.
@@ -81,7 +82,8 @@ console.log(rows);
 | `password`    | `string`                | —          | Basic-auth password; may be empty.     |
 | `database`    | `string`                | `"public"` | Default database.                      |
 | `tenant`      | `string`                | `"cnosdb"` | Default tenant.                        |
-| `timeoutMs`   | `number`                | `10000`    | Default request timeout.               |
+| `timeoutMs`   | `number`                | `10000`    | Timeout for a single attempt.          |
+| `retry`       | `RetryOptions`          | —          | Retry policy; off unless supplied.     |
 | `precision`   | `"ms" \| "us" \| "ns"`  | `"ms"`     | Default write precision.               |
 | `compression` | `"none" \| "gzip"`      | `"none"`   | Compression for write payloads.        |
 | `headers`     | `Record<string,string>` | —          | Extra headers sent with every request. |
@@ -332,6 +334,57 @@ await pending; // rejects with CnosDBRequestError, code "ABORT_ERR"
 
 Override the timeout per request with `timeoutMs`.
 
+## Retries
+
+Retries are off by default: one call, one request. A client that retries a
+write silently can duplicate points and corrupt aggregates long before anyone
+notices, so nothing is retried until you ask.
+
+```ts
+const client = new CnosDBClient({
+  url: "http://localhost:8902",
+  retry: {
+    attempts: 3,
+    backoff: { initialMs: 100, maxMs: 2_000, jitter: true },
+    retryWrites: false,
+  },
+});
+```
+
+| Option              | Default | Description                                       |
+| ------------------- | ------- | ------------------------------------------------- |
+| `attempts`          | —       | Total attempts including the first; `1` disables. |
+| `backoff.initialMs` | `100`   | First delay.                                      |
+| `backoff.maxMs`     | `2000`  | Cap on any single delay.                          |
+| `backoff.jitter`    | `true`  | Spread the delay randomly across the interval.    |
+| `retryWrites`       | `false` | Also retry writes.                                |
+| `maxElapsedMs`      | —       | Wall-clock ceiling for the whole sequence.        |
+
+**What gets retried.** `ping`, `query`, and `queryTable` are retried, because
+they are the methods that return rows. Writes are retried only with
+`retryWrites`. `execute` is never retried, whatever you configure: it exists for
+statements whose point is their effect, and the client cannot tell whether a
+failed attempt took hold before the connection dropped. If you send an `INSERT`
+through `query` with retries on, it will be retried — send it through `execute`.
+
+**Which failures.** Timeouts, connection failures, HTTP 429, and 5xx other than 501. Rejected credentials, malformed SQL, an oversized payload, and a caller
+abort are final, because the server will decide them the same way next time.
+
+**Timing.** `timeoutMs` is the budget for one attempt, not for the sequence, so
+enabling retries does not shrink the time any single attempt gets. Use
+`maxElapsedMs` for a bound on the total. Backoff doubles from `initialMs` up to
+`maxMs`, and with jitter the actual wait is a random point below that, so a
+fleet of clients that failed together does not come back in lockstep. A
+`Retry-After` header wins over the computed delay, capped by `maxMs`.
+
+An `AbortSignal` ends the sequence immediately, including during a backoff.
+
+`retryWrites` is worth a moment's thought before enabling. CnosDB does not
+deduplicate, so a retried write whose first attempt actually landed writes the
+points twice. That is harmless when a repeat overwrites the same series and
+timestamp, and quietly wrong otherwise. The reasoning is recorded in
+[ADR-0009](docs/adr/0009-opt-in-retry-policy.md).
+
 ## Error handling
 
 ```ts
@@ -403,7 +456,8 @@ splitPoints(points: readonly Point[], options: SplitOptions): Generator<string>
 ```
 
 Exported types: `CnosDBClientOptions`, `RequestOptions`, `QueryOptions`,
-`WriteOptions`, `PingResult`, `Point`, `PointFieldValue`, `TimePrecision`,
+`WriteOptions`, `RetryOptions`, `BackoffOptions`, `SplitOptions`, `PingResult`,
+`QueryTable`, `Point`, `PointFieldValue`, `TimePrecision`, `Compression`,
 `FetchLike`, and `CnosDBErrorOptions`.
 
 ## Compatibility

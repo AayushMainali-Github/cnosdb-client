@@ -25,7 +25,7 @@ Within each folder:
 | `types/`         | `common`, `client-options`, `request-options`, `point`, `ping` |
 | `errors/`        | `base`, `http-status`, `transport`, `response`, `from-status`  |
 | `line-protocol/` | `escape`, `field`, `timestamp`, `serialize`                    |
-| `http/`          | `url`, `auth`, `body`, `guards`, `transport`                   |
+| `http/`          | `url`, `auth`, `body`, `guards`, `retry`, `transport`          |
 | `client/`        | `defaults`, `validate`, `controls`, `client`                   |
 
 ### The barrel rule
@@ -163,16 +163,22 @@ Each of these has an ADR in [adr/](adr/):
 - Dual ESM and CommonJS output ([0003](adr/0003-publish-esm-and-commonjs.md)).
 - Changesets for releases ([0004](adr/0004-use-changesets.md)).
 - Issue-first GitHub Flow ([0005](adr/0005-use-issue-first-github-flow.md)).
-- No automatic retries ([0006](adr/0006-disable-automatic-retries-in-v0.1.0.md)).
+- No automatic retries by default ([0006](adr/0006-disable-automatic-retries-in-v0.1.0.md), amended by [0009](adr/0009-opt-in-retry-policy.md)).
 - Unofficial, independent branding ([0007](adr/0007-use-unofficial-independent-branding.md)).
+- Opt-in retry policy with a per-attempt timeout ([0009](adr/0009-opt-in-retry-policy.md)).
 
-### Why no retries
+### Why retries are off by default
 
 A retry is a correctness decision, not a convenience. `POST /api/v1/write` is
 not safely idempotent from the client's point of view: a timeout may mean the
 write never landed, or that it landed and the response was lost. Retrying
-silently duplicates data in the second case. So v0.1.0 retries nothing and
-instead exposes typed errors precise enough for the caller to decide.
+silently duplicates data in the second case.
+
+So the client retries nothing unless asked. A caller who sets `retry` gets
+reads retried; writes stay excluded until `retryWrites` says otherwise. The
+decision of what counts as retryable lives in `http/retry.ts`, next to the
+typed errors that classify each failure, and the transport consults it only for
+requests the client itself has marked repeatable.
 
 ### Dependency policy
 

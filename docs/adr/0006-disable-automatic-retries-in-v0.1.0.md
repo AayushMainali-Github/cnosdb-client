@@ -1,6 +1,6 @@
 # ADR-0006: Disable automatic retries in v0.1.0
 
-**Status:** Accepted
+**Status:** Accepted, amended by [ADR-0009](0009-opt-in-retry-policy.md)
 **Date:** 2026-07-24
 
 ## Context
@@ -41,6 +41,9 @@ policy their situation calls for:
 An opt-in retry policy is a candidate for a later version
 ([ROADMAP.md](../../ROADMAP.md)). If added, it must be off by default and must
 never retry a write unless the caller explicitly accepts duplication risk.
+
+> [ADR-0009](0009-opt-in-retry-policy.md) added that policy under both
+> conditions. The default is still one call, one request.
 
 ## Consequences
 

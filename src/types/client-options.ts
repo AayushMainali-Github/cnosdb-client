@@ -1,4 +1,5 @@
 import type { Compression, FetchLike, TimePrecision } from "./common.js";
+import type { RetryOptions } from "./retry.js";
 
 /**
  * Construction options for {@link CnosDBClient}.
@@ -35,8 +36,22 @@ export interface CnosDBClientOptions {
 
   /**
    * Default request timeout in milliseconds. Defaults to `10_000`.
+   *
+   * This is the budget for a single attempt. When `retry` is configured, each
+   * attempt gets the full budget; bound the total with `retry.maxElapsedMs`.
    */
   readonly timeoutMs?: number;
+
+  /**
+   * Retry policy. Unset by default, so a failed request fails once and the
+   * caller decides what to do.
+   *
+   * When set, `ping`, `query`, and `queryTable` are retried on failures that
+   * could plausibly succeed later. Writes are retried only with
+   * `retry.retryWrites`, and `execute` is never retried because it exists for
+   * statements that change something.
+   */
+  readonly retry?: RetryOptions;
 
   /**
    * Default write precision. Defaults to `"ms"`, which matches JavaScript

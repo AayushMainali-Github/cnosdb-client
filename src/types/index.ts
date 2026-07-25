@@ -6,5 +6,6 @@ export type {
   WriteOptions,
 } from "./request-options.js";
 export type { PingResult } from "./ping.js";
+export type { BackoffOptions, RetryOptions } from "./retry.js";
 export type { QueryTable } from "./query-table.js";
 export type { Point, PointFieldValue } from "./point.js";
