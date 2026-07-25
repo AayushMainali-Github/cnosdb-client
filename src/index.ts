@@ -1,6 +1,8 @@
 export { CnosDBClient } from "./client/index.js";
 export { serializePoint, splitPoints } from "./line-protocol/index.js";
 export type { SplitOptions } from "./line-protocol/index.js";
+export { sql } from "./sql/index.js";
+export type { SqlValue } from "./sql/index.js";
 export {
   CnosDBAuthenticationError,
   CnosDBError,

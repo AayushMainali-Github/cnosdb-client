@@ -16,6 +16,7 @@ Source is grouped into five domain folders. Each owns one concern and exposes an
 | `src/line-protocol/` | Pure Line Protocol serialization                            | Partly  |
 | `src/csv/`           | RFC 4180 parser for column-aware query results              | No      |
 | `src/json/`          | Streaming decoder for chunked JSON query results            | No      |
+| `src/sql/`           | SQL value escaping for the `sql` tagged template            | Yes     |
 | `src/http/`          | Internal transport: URLs, auth, timeouts, response handling | No      |
 | `src/client/`        | `CnosDBClient`, thin orchestration over the layers below    | Yes     |
 | `src/index.ts`       | The package's entire public surface                         | Yes     |
@@ -29,6 +30,7 @@ Within each folder:
 | `line-protocol/` | `escape`, `field`, `timestamp`, `serialize`, `split`                                   |
 | `csv/`           | `parse`                                                                                |
 | `json/`          | `stream`                                                                               |
+| `sql/`           | `escape`                                                                               |
 | `http/`          | `url`, `auth`, `body`, `guards`, `compress`, `headers`, `retry`, `transport`           |
 | `client/`        | `defaults`, `validate`, `controls`, `client`                                           |
 

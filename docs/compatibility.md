@@ -101,6 +101,7 @@ Observed on CnosDB 2.4.3 and encoded in the tests:
 - No response format carries column **types**.
 - DDL such as `CREATE DATABASE` returns HTTP 200 with an **empty body**. `query()` therefore resolves to `undefined` for such statements; use `execute()` instead.
 - Invalid SQL returns HTTP **422** with a JSON body such as `{"error_code":"030019","error_message":"Table not found: ..."}`. This maps to `CnosDBRequestError`.
+- SQL string literals use single quotes with SQL-standard doubling for an embedded quote (`'a''b'` → `a'b`). Backslash is **not** an escape inside strings (a trailing `\'` is an unterminated literal). Double quotes name identifiers. `NULL`, `true`/`false`, ordinary numbers, and `TIMESTAMP '…'` (ISO-8601) are accepted. This is the encoding `sql` implements.
 - CnosDB **never returns HTTP 401**. It reuses 422 for nearly every application failure and distinguishes them only by `error_code`, so the client classifies errors on that code rather than on the status. The 401 mapping is retained for proxies that do use it.
 - `POST /api/v1/write` accepts `precision` values `ms`, `us`, and `ns`, and returns HTTP 200 with an empty body.
 - Writing with `precision=ms` and a millisecond timestamp round-trips to the expected wall-clock time.

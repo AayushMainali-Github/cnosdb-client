@@ -77,7 +77,7 @@ There is no `develop` branch. `main` is always releasable.
 ## Where code goes
 
 `src/` is grouped into one folder per domain — `types/`, `errors/`,
-`line-protocol/`, `csv/`, `json/`, `http/`, and `client/` — each with an
+`line-protocol/`, `csv/`, `json/`, `sql/`, `http/`, and `client/` — each with an
 `index.ts` barrel. Add code to the folder that owns the concern, and export it
 from that barrel only if another folder needs it.
 
