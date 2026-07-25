@@ -1,5 +1,35 @@
 # Changelog
 
+## 0.3.0
+
+### Minor Changes
+
+- [#56](https://github.com/AayushMainali-Github/cnosdb-client/pull/56) [`d784699`](https://github.com/AayushMainali-Github/cnosdb-client/commit/d7846990c341d024c24a8366e266d93dacc74fe4) Thanks [@AayushMainali-Github](https://github.com/AayushMainali-Github)! - Add `sql`, a tagged template that escapes interpolated values as CnosDB SQL literals. Strings use SQL-standard quote doubling, `null`/`boolean`/`number`/`bigint`/`Date` have fixed encodings, and anything else — including `NaN`, `Infinity`, and invalid dates — throws rather than guessing. Identifiers and statement structure stay in the literal parts of the template; this is a value escaper, not a query builder.
+
+- [#55](https://github.com/AayushMainali-Github/cnosdb-client/pull/55) [`f183f3b`](https://github.com/AayushMainali-Github/cnosdb-client/commit/f183f3bd3097b0a3204166608a6c9d854f500df8) Thanks [@AayushMainali-Github](https://github.com/AayushMainali-Github)! - Add `queryStream()`, an async generator that yields query rows as they arrive instead of buffering the whole response. It asks CnosDB for `chunked=true`, which replies with successive JSON arrays written back to back; the client parses each array and yields its elements so memory stays proportional to one server batch.
+
+  Row shape matches `query()` (alphabetically sorted keys, NULL columns omitted). SQL errors still arrive as an HTTP error before any row is sent; a failure after some rows have been yielded throws and leaves those rows consumed, so a partial result is visible rather than hidden. Breaking out of the loop or aborting `options.signal` cancels the underlying response.
+
+- [#54](https://github.com/AayushMainali-Github/cnosdb-client/pull/54) [`94cd075`](https://github.com/AayushMainali-Github/cnosdb-client/commit/94cd075871c6fd9e777a3a911244957eae497231) Thanks [@AayushMainali-Github](https://github.com/AayushMainali-Github)! - Add an opt-in `retry` policy. Retries stay off unless configured, so the default remains one call, one request; enabling them retries `ping`, `query`, and `queryTable` on timeouts, connection failures, HTTP 429, and 5xx other than 501. Writes are retried only with `retryWrites`, and `execute` is never retried, because the client cannot tell whether a failed attempt took effect.
+
+  Backoff doubles from `backoff.initialMs` up to `backoff.maxMs` with full jitter by default, a `Retry-After` header overrides the computed delay within that cap, and an `AbortSignal` ends the sequence immediately including mid-backoff.
+
+  `timeoutMs` keeps its existing meaning as the budget for a single attempt rather than becoming a deadline across the sequence; `retry.maxElapsedMs` bounds the total. The reasoning, and the amendment to ADR-0006, are recorded in ADR-0009.
+
+- [#51](https://github.com/AayushMainali-Github/cnosdb-client/pull/51) [`6340578`](https://github.com/AayushMainali-Github/cnosdb-client/commit/63405786aa50ac75b6e40f7b975a111cdcacc90e) Thanks [@AayushMainali-Github](https://github.com/AayushMainali-Github)! - Add `client.queryTable()`, which returns a result's columns alongside its rows. It requests CSV, the only CnosDB response format that carries column names in their true order, so the columns come back in the order the statement selected them and every row has exactly one value per column. On CnosDB 2.4.3 the columns survive an empty result, so a table with no matching rows can still be rendered with its headings; 2.4.1 returns an empty body instead and reports no columns.
+
+  This matters because the JSON format used by `query()` sorts keys alphabetically and omits any column that is NULL for a given row, which makes row objects differ in shape and hides nulls entirely. Both behaviours are now documented in `docs/compatibility.md`.
+
+  Values are returned as raw strings, because CnosDB sends no column types over HTTP in any response format; converting them would mean guessing.
+
+  Also exports the `Compression` type from the package root, which was added as a client option in 0.2.0 but was not importable.
+
+- [#53](https://github.com/AayushMainali-Github/cnosdb-client/pull/53) [`2ef8eea`](https://github.com/AayushMainali-Github/cnosdb-client/commit/2ef8eeacbde85927d4fcc588468014c9e3297298) Thanks [@AayushMainali-Github](https://github.com/AayushMainali-Github)! - Add `splitPoints()`, a generator that cuts a batch of points into Line Protocol payloads no larger than a chosen size. Sizing is by encoded UTF-8 bytes rather than point count, since points vary enormously in encoded length and server limits are measured in bytes; the separating newlines are counted too, so a payload that fits also fits on the wire.
+
+  Splitting is opt-in with no default size, so existing writes are unchanged. A single point larger than `maxBytes` raises a `RangeError` naming its index and size rather than emitting an oversized payload.
+
+  Sending the chunks is left to the caller, so a failure part way through a batch makes it obvious which chunks were already written.
+
 ## 0.2.0
 
 ### Minor Changes

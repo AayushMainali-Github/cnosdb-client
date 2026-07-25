@@ -1,6 +1,6 @@
 {
   "name": "cnosdb-client",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Unofficial, community-maintained TypeScript client for the CnosDB HTTP API",
   "keywords": [
     "cnosdb",
