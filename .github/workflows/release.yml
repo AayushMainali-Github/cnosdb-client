@@ -65,7 +65,7 @@ jobs:
           git config user.email "94561475+AayushMainali-Github@users.noreply.github.com"
 
       - name: Create release pull request or publish
-        uses: changesets/action@v1
+        uses: changesets/action@v2
         with:
           version: npm run version
           publish: npx changeset publish
